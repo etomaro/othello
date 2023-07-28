@@ -170,6 +170,8 @@ def choice(actionable, state, player_id):
           (現在の相手が取れる角の数 - 次の相手が取れる角の数) * 1万点 +
           (現在の相手が取れる端の数 - 次の相手が取れる端の数) * 100点 +
           (100点 - 次の相手の手数)
+          自分が角を取れるアクション + 1満点
+          自分が端を取れるアクション + 100点
 
 
 
@@ -219,6 +221,13 @@ def choice(actionable, state, player_id):
         evaluate_value += (opponent_corner_count - next_opponent_corner_count) * 10000
         evaluate_value += (opponent_edge_count - next_opponent_edge_count) * 100
         evaluate_value += (100 - len(next_actionable))
+        if next_action == "a1" or action == "a8" or action == "h1" or action == "h8":
+            evaluate_value += 10000
+        elif action == "a2" or action == 'a3' or action == 'a4' or action == 'a5' or action == 'a6' or action == 'a7' or \
+                action == 'b1' or action == 'b8' or action == 'c1' or action == 'c8' or action == 'd1' or action == 'd8' or \
+                action == 'e1' or action == 'e8' or action == 'f1' or action == 'f8' or action == 'g1' or action == 'g8' or \
+                action == 'h2' or action == 'h3' or action == 'h4' or action == 'h5' or action == 'h6' or action == 'h7':
+            evaluate_value += 100
 
         evaluete[action] = evaluate_value
 
@@ -226,16 +235,18 @@ def choice(actionable, state, player_id):
     # 選択(一番点数が高いものを選択)
     choice_action = max(evaluete.items(), key=lambda x:x[1])[0]
 
+    # print("evaluete: ", evaluete)
+
     return choice_action
 
 
 # テスト
-# state = ['........', '....01..', '.000000.', '...100..', '..100...', '.....0..', '........', '........']
-# actionable = ['d2', 'g4', 'g7', 'd6', 'b2', 'f5', 'h4']
-# player_id = "1"
+state = ['........', '....01..', '.000000.', '...100..', '..100...', '.....0..', '........', '........']
+actionable = ['d2', 'g4', 'g7', 'd6', 'b2', 'f5', 'h4']
+player_id = "1"
 
-# # # next_state, next_player_id = get_next_state(state, "g2", player_id)
-# # # actionable = get_actionables(next_state, next_player_id)
-# choice_action = choice(actionable, state, player_id)
-# print("choice_action: ", choice_action)
+# # next_state, next_player_id = get_next_state(state, "g2", player_id)
+# # actionable = get_actionables(next_state, next_player_id)
+choice_action = choice(actionable, state, player_id)
+print("choice_action: ", choice_action)
 
