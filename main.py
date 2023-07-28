@@ -281,14 +281,14 @@ def choice(actionable, state, player_id):
     # 選択(一番点数が高いものを選択)
     choice_action = max(evaluete.items(), key=lambda x:x[1])[0]
 
-    # print("evaluete: ", evaluete)
+    print("evaluete: ", evaluete)
 
     return choice_action
 
 
 # テスト
-state = ['........', '....01..', '.000000.', '...100..', '..100...', '.....0..', '........', '........']
-actionable = ['d2', 'g4', 'g7', 'd6', 'b2', 'f5', 'h4']
+state = ['........', '........', '....10..', '...11101', '..111000', '..011001', '...0.01.', '..00001.']
+actionable = ['g2', 'h7', 'b7', 'f2', 'g3', 'b6', 'h3', 'c7', 'e7', 'b8']
 player_id = "1"
 
 # # next_state, next_player_id, change_places = get_next_state(state, "g2", player_id)
