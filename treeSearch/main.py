@@ -1,4 +1,17 @@
+"""
+木の作成
+木の探索
+    深さ優先探索(DFS)
+        行きがけ順(preorder)
+        通りがけ順(inorder)
+        帰りがけ順(postorder)
+    幅優先探索(BFS)
+"""
+
+
 import random
+
+
 
 class Node():
     def __init__(self, data):
