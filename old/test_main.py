@@ -1,4 +1,4 @@
-import main
+import old.main as main
 
 
 def test_get_actionables():
