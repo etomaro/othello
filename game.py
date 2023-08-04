@@ -1,6 +1,6 @@
 
 class Game():
-    def __init__(self):
+    def __init__(self, game_info=None):
         """
         ゲームの初期化
             boardの表記
@@ -31,17 +31,28 @@ class Game():
             ※ codingameでのboardの保存方法
               -> 1次元配列            
         """
-        self.board = [[ "." for j in range(8)] for i in range(8)]  # ボードの初期化(後攻(白): 0, 先行(黒): 1, 空き: .)
-        self.board[3][3] = "0"
-        self.board[4][4] = "0"
-        self.board[3][4] = "1"
-        self.board[4][3] = "1"
-        self.action_player_id = "1"  # "1": 先行(黒)、"0": 後攻(白)
-        self.is_game_over = False
-        self.win_player = None  # "1": 先行(黒)の勝ち、"0": 後攻(白)の勝ち、"2": 引き分け
-        self.turn = 0  # ターン数
-        print("ゲームを開始します")
-        self.print_board()
+        if game_info is not None:
+            self.board = game_info["board"]
+            self.action_player_id = game_info["action_player_id"]
+            self.is_game_over = game_info["is_game_over"]
+            self.win_player = game_info["win_player"]
+            self.turn = game_info["turn"]
+            self.black_count = game_info["black_count"]
+            self.white_count = game_info["white_count"]
+        else:
+            self.board = [[ "." for j in range(8)] for i in range(8)]  # ボードの初期化(後攻(白): 0, 先行(黒): 1, 空き: .)
+            self.board[3][3] = "0"
+            self.board[4][4] = "0"
+            self.board[3][4] = "1"
+            self.board[4][3] = "1"
+            self.action_player_id = "1"  # "1": 先行(黒)、"0": 後攻(白)
+            self.is_game_over = False
+            self.win_player = None  # "1": 先行(黒)の勝ち、"0": 後攻(白)の勝ち、"2": 引き分け
+            self.turn = 0  # ターン数
+            print("ゲームを開始します")
+            self.print_board()
+            self.black_count = 2
+            self.white_count = 2
     
     def print_board(self):
         """
@@ -73,6 +84,7 @@ class Game():
 
         # アクションを実行
         self.set_board(action, player_id)
+        self.set_stone_count()
         self.turn += 1
 
         self.print_board()
@@ -153,8 +165,24 @@ class Game():
 
                     # ここには来ないはず
                     print("error")
+        
+    def set_stone_count(self):
+        """
+        石をカウントしてセット
+        """
+        black_count = 0
+        white_count = 0
+        for i in range(8):
+            for j in range(8):
+                if self.board[i][j] == "1":
+                    black_count += 1
+                elif self.board[i][j] == "0":
+                    white_count += 1
+        
+        self.black_count = black_count
+        self.white_count = white_count
 
-    
+
     def set_next_action_player(self):
         """
         次アクションできるプレイヤーを更新
