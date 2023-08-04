@@ -18,4 +18,4 @@ app.add_middleware(
 
 @app.get("/othello")
 def Hello():
-    return {"Hello":"World!"}
+    return {"Hello":"bitgame"}
