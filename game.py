@@ -47,7 +47,7 @@ class Game():
             self.board[4][3] = "1"
             self.action_player_id = "1"  # "1": 先行(黒)、"0": 後攻(白)
             self.is_game_over = False
-            self.win_player = None  # "1": 先行(黒)の勝ち、"0": 後攻(白)の勝ち、"2": 引き分け
+            self.win_player = ""  # "1": 先行(黒)の勝ち、"0": 後攻(白)の勝ち、"2": 引き分け
             self.turn = 0  # ターン数
             print("ゲームを開始します")
             self.print_board()
