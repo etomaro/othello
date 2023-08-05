@@ -92,7 +92,7 @@ class Game():
         # ゲームが終了かどうか
         is_game_over = self.check_game_over()
         if is_game_over:
-            return None, None, True
+            return "", [], True
 
         # 次のアクション可能なプレイヤーを更新
         self.set_next_action_player()
