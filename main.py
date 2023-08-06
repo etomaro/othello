@@ -9,7 +9,7 @@ app = FastAPI()
 
 origins = [
     "http://localhost:3000",
-    "https://bitgame-eacc4.web.app/othello",
+    "https://bitgame-eacc4.web.app",
 ]
 
 app.add_middleware(
