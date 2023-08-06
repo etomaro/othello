@@ -1,6 +1,7 @@
 from game import Game
 from player.random import RandomPlayer
 from player.human import HumanPlayer
+from player.firstModel import FirstModelPlayer
 
 
 class Simulator():
@@ -11,8 +12,8 @@ class Simulator():
         self.player1 = player1
         self.player0 = player0
 
-        player1.player_id = "1"  # 先行
-        player0.player_id = "0"  # 後攻
+        self.player1.player_id = "1"  # 先行
+        self.player0.player_id = "0"  # 後攻
 
         self.game = Game()  # ゲームインスタンス作成
 
@@ -43,8 +44,8 @@ class Simulator():
 
 
 # ---test---
-player1 = RandomPlayer("1")
-player0 = HumanPlayer("0")
+player1 = RandomPlayer()
+player0 = FirstModelPlayer()
 simulator = Simulator(player1, player0)
 simulator.run()
 

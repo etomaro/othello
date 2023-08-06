@@ -3,6 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel  # リクエストbodyを定義するために必要
 from game import Game
 from player.random import RandomPlayer
+from player.firstModel import FirstModelPlayer
 
 app = FastAPI()
 
@@ -72,7 +73,7 @@ def action(info: Info):
         if info["action_model"] == "random":
             player = RandomPlayer(info["game_info"]["action_player_id"])
         elif info["action_model"] == "v1ai":
-            pass 
+            player = FirstModelPlayer(info["game_info"]["action_player_id"])
 
         next_player_id, actionables, is_game_over = player.action(game)
     else:

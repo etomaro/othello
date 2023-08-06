@@ -3,8 +3,10 @@ import random
 
 
 class RandomPlayer(Player):
-    def __init__(self, player_id):
-        self.player_id = player_id  # "1": 先行(黒)、"0": 後攻(白)
+    def __init__(self, player_id=""):
+        # "1": 先行(黒)、"0": 後攻(白)
+        if player_id != "":
+            self.player_id = player_id
 
     def action(self, game):
         """

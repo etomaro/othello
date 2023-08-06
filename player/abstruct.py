@@ -2,7 +2,7 @@ from abc import ABCMeta, abstractmethod
 
 class Player(metaclass=ABCMeta):
     @abstractmethod
-    def __init__(self, player_id):
+    def __init__(self, player_id=""):
         pass
 
     @abstractmethod
