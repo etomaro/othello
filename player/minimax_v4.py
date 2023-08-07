@@ -8,8 +8,12 @@ logging.basicConfig(level=logging.INFO, format='%(message)s')  # ここでログ
 logger = logging.getLogger(__name__)
 
 
-class MiniMaxV3Player(Player):
+class MiniMaxV4Player(Player):
     """
+    MINIMAXを導入
+      mini_value()の時にαカットを検討
+      max2_value()の時にβカットを検討
+      mini2_value()の時にαカットを検討
     4手先まで行動(自分と相手が一回ずつ行動)した後の状態で価値を決めて、min(),max()で最適な手を選択する
     評価関数を設定
     """
@@ -62,14 +66,15 @@ class MiniMaxV3Player(Player):
             if next_is_game_over:
                 return action
             
-            value = self._min_value(next_game)
+            value = self._min_value(next_game, max_value)
+
             if value >= max_value:
                 max_value = value
                 max_action = action
         
         return max_action
 
-    def _min_value(self, game):
+    def _min_value(self, game, alfa):
         """
         最小値を返す
         """
@@ -85,13 +90,18 @@ class MiniMaxV3Player(Player):
                 return float("-inf")
             
             # 状態の価値を計算
-            value = self._max2_value(new_game)
+            value = self._max2_value(new_game, min_value)
+
+            # αカット
+            if value < alfa:
+                return value
+
             if value <= min_value:
                 min_value = value
         
         return min_value
 
-    def _min2_value(self, game):
+    def _min2_value(self, game, alfa):
         """
         最小値を返す
         """
@@ -108,12 +118,17 @@ class MiniMaxV3Player(Player):
             
             # 状態の価値を計算
             value = self._evaluate(new_game)
+
+            # αカット
+            if value < alfa:
+                return value
+
             if value <= min_value:
                 min_value = value
 
         return min_value
 
-    def _max2_value(self, game):
+    def _max2_value(self, game, beta):
         """
         最大値を返す
         """
@@ -128,7 +143,12 @@ class MiniMaxV3Player(Player):
                 return float("inf")
             
             # 状態の価値を計算
-            value = self._min2_value(new_game)
+            value = self._min2_value(new_game, max_value)
+
+            # βカット
+            if value > beta:
+                return value
+
             if value >= max_value:
                 max_value = value
         
