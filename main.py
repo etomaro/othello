@@ -4,6 +4,7 @@ from pydantic import BaseModel  # リクエストbodyを定義するために必
 from game import Game
 from player.random import RandomPlayer
 from player.firstModel import FirstModelPlayer
+from player.minimax_v5 import MiniMaxV5Player
 
 app = FastAPI()
 
@@ -23,7 +24,7 @@ app.add_middleware(
 @app.get("/othello/models")
 def start():
     
-    models = ["random", "v1ai"]
+    models = ["random", "v1ai", "v2ai"]
     result = {"model": models}
 
     return result
@@ -74,6 +75,8 @@ def action(info: Info):
             player = RandomPlayer(info["game_info"]["action_player_id"])
         elif info["action_model"] == "v1ai":
             player = FirstModelPlayer(info["game_info"]["action_player_id"])
+        elif info["action_model"] == "v2ai":
+            player = MiniMaxV5Player(info["game_info"]["action_player_id"])
 
         next_player_id, actionables, is_game_over = player.action(game)
     else:
