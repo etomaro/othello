@@ -4,7 +4,7 @@ from pydantic import BaseModel  # リクエストbodyを定義するために必
 from game import Game
 from player.random import RandomPlayer
 from player.firstModel import FirstModelPlayer
-from player.minimax_v5 import MiniMaxV5Player
+from player.minimax_v4 import MiniMaxV4Player
 
 app = FastAPI()
 
@@ -76,7 +76,7 @@ def action(info: Info):
         elif info["action_model"] == "v1ai":
             player = FirstModelPlayer(info["game_info"]["action_player_id"])
         elif info["action_model"] == "v2ai":
-            player = MiniMaxV5Player(info["game_info"]["action_player_id"])
+            player = MiniMaxV4Player(info["game_info"]["action_player_id"])
 
         next_player_id, actionables, is_game_over = player.action(game)
     else:
