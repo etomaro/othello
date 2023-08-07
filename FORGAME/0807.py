@@ -1,41 +1,6 @@
-import logging
-
-
-logging.basicConfig(level=logging.INFO, format='%(message)s')  # ここでログレベルを設定する(debug<info<warning<error)
-logger = logging.getLogger(__name__)
-
-
 class Game():
     def __init__(self, game_info=None):
-        """
-        ゲームの初期化
-            boardの表記
-                0 1 2 3 4 5 6 7 
-              0 - - - - - - - -
-              1 - - - - - - - -
-              2 - - - - - - - -
-              3 - - - - - - - -
-              4 - - - - - - - -
-              5 - - - - - - - -
-              6 - - - - - - - -
-              7 - - - - - - - -
-            
-            ※ codingameでの表記
-                a b c d e f g h
-              1 - - - - - - - -
-              2 - - - - - - - -
-              3 - - - - - - - -
-              4 - - - - - - - -
-              5 - - - - - - - -
-              6 - - - - - - - -
-              7 - - - - - - - -
-              8 - - - - - - - -
-
-            boardの保存方法
-              -> 2次元配列
-
-            ※ codingameでのboardの保存方法
-              -> 1次元配列            
+        """         
         """
         if game_info is not None:
             self.board = game_info["board"]
@@ -55,25 +20,8 @@ class Game():
             self.is_game_over = False
             self.win_player = ""  # "1": 先行(黒)の勝ち、"0": 後攻(白)の勝ち、"2": 引き分け
             self.turn = 0  # ターン数
-            logger.debug("ゲームを開始します")
-            self.print_board()
             self.black_count = 2
-            self.white_count = 2
-    
-    def print_board(self):
-        """
-        ボードの状態を出力
-        """
-        result = ""
-        for i in range(8):
-            for j in range(8):
-                result += self.board[i][j]
-                result += " "
-            result += "\n"
-        
-        logger.debug(f"---{self.turn}回目---\n{result}\n")
-
-            
+            self.white_count = 2        
 
     def step(self, action, player_id):
         """ 
@@ -86,18 +34,12 @@ class Game():
         """
         # アクション可能か
         if not self.is_actionable(action, player_id):
-            logger.error(
-                "プレイヤーID: %s\nアクション: %s\n可能なアクション: %s",
-                player_id, action, self.get_actionables(player_id)
-            )
             raise Exception("不正なアクションです")
 
         # アクションを実行
         self.set_board(action, player_id)
         self.set_stone_count()
         self.turn += 1
-
-        self.print_board()
 
         # ゲームが終了かどうか
         is_game_over = self.check_game_over()
@@ -172,9 +114,6 @@ class Game():
                         next_row += vector[0]
                         next_col += vector[1]
                         continue
-
-                    # ここには来ないはず
-                    logger.error("error")
         
     def set_stone_count(self):
         """
@@ -267,9 +206,6 @@ class Game():
                             next_col += vector[1]
                             continue
 
-                        # ここには来ないはず
-                        logger.error("error")
-
         return actionables
 
     def is_actionable(self, action, player_id):
@@ -278,18 +214,15 @@ class Game():
         """
         # アクション待ちのプレイヤーかどうか
         if self.action_player_id != player_id:
-            logger.info("アクション待ちのプレイヤーではありません")
             return False 
         
         # ゲームが終了しているかどうか
         if self.is_game_over:
-            logger.info("ゲームは終了しています")
             return False 
 
         # 可能なアクションの手かどうか
         actionable_list = self.get_actionables(player_id)
         if action not in actionable_list:
-            logger.error("不可能なアクションです: ")
             return False 
 
         return True
@@ -333,25 +266,5 @@ class Game():
         
         return result
 
-    def get_result(self):
-        """
-        ゲームの勝敗を取得
-        """
-        result = {
-            "win_player": "",
-            "black_count": 0,
-            "white_count": 0
-        }
-
-        if self.is_game_over:
-            result["win_player"] = self.win_player
-            for i in range(8):
-                for j in range(8):
-                    if self.board[i][j] == "1":
-                        result["black_count"] += 1
-                    elif self.board[i][j] == "0":
-                        result["white_count"] += 1
-        
-        return result
 
 

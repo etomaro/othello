@@ -1,5 +1,10 @@
 from player.abstruct import Player
 import random
+import logging
+
+
+logging.basicConfig(level=logging.INFO, format='%(message)s')  # ここでログレベルを設定する(debug<info<warning<error)
+logger = logging.getLogger(__name__)
 
 
 class FirstModelPlayer(Player):
@@ -88,7 +93,7 @@ class FirstModelPlayer(Player):
                             continue
 
                         # ここには来ないはず
-                        print("error")
+                        logger.error("error")
         
         # 3. game用の表記に直す(col: a-h, row: 1-8)
         for idx, actionable in enumerate(actionables):
@@ -173,7 +178,7 @@ class FirstModelPlayer(Player):
                         continue
 
                     # ここには来ないはず
-                    print("error")
+                    logger.error("error")
 
 
         next_player_id = "0" if player_id == "1" else "1"
@@ -409,16 +414,16 @@ class FirstModelPlayer(Player):
 
             # debug
             # if action == "e1":
-            #     print("action: ", action)
-            #     print("next_actionable: ", next_actionable)
-            #     print("evaluate_value: ", evaluate_value)
-            #     print("[opponent_corner_count] 現在の相手が取れる角の数: ", opponent_corner_count)
-            #     print("[next_opponent_corner_count] 次の相手が取れる角の数: ", next_opponent_corner_count)
-            #     print("[opponent_edge_count]: 現在の相手が取れる端の数", opponent_edge_count)
-            #     print("[next_opponent_edge_count] 次の相手が取れる端の数: ", next_opponent_edge_count)
-            #     print("[reverse_my_edge_count] 現在の相手がひっくり返すことができる端の数: ", reverse_my_edge_count)
-            #     print("[next_reverse_my_edge_count] 次の相手がひっくり返すことができる端の数: ", next_reverse_my_edge_count)
-            #     print("[reverse_opponent_edge_count]: 現在の自分がひっくり返すことができる端の数", reverse_opponent_edge_count)
+            #     logger.debug("action: %s", action)
+            #     logger.debug("next_actionable: %s", next_actionable)
+            #     logger.debug("evaluate_value: %s", evaluate_value)
+            #     logger.debug("[opponent_corner_count] 現在の相手が取れる角の数: %s", opponent_corner_count)
+            #     logger.debug("[next_opponent_corner_count] 次の相手が取れる角の数: %s", next_opponent_corner_count)
+            #     logger.debug("[opponent_edge_count]: 現在の相手が取れる端の数: %s", opponent_edge_count)
+            #     logger.debug("[next_opponent_edge_count] 次の相手が取れる端の数: %s", next_opponent_edge_count)
+            #     logger.debug("[reverse_my_edge_count] 現在の相手がひっくり返すことができる端の数: %s", reverse_my_edge_count)
+            #     logger.debug("[next_reverse_my_edge_count] 次の相手がひっくり返すことができる端の数: %s", next_reverse_my_edge_count)
+            #     logger.debug("[reverse_opponent_edge_count]: 現在の自分がひっくり返すことができる端の数: %s", reverse_opponent_edge_count)
 
             evaluete[action] = evaluate_value
 
@@ -431,6 +436,6 @@ class FirstModelPlayer(Player):
         row = int(choice_action[1]) - 1
 
         result = [row, col]
-        print("evaluete: ", evaluete)
+        logger.debug("evaluete: %s", evaluete)
 
         return result
