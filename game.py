@@ -104,11 +104,15 @@ class Game():
         if is_game_over:
             return "", [], True
 
-        # 次のアクション可能なプレイヤーを更新
-        self.set_next_action_player()
-
         # 次アクション可能なリストを取得
-        actionables = self.get_actionables(self.action_player_id)
+        next_player_id = "0" if self.action_player_id=="1" else "1"
+        actionables = self.get_actionables(next_player_id)
+        
+        # 次のアクション可能なプレイヤーを更新
+        if len(actionables) == 0:
+            actionables = self.get_actionables(self.action_player_id)
+        else:
+            self.action_player_id = next_player_id
 
         return self.action_player_id, actionables, False
 
@@ -191,19 +195,6 @@ class Game():
         
         self.black_count = black_count
         self.white_count = white_count
-
-
-    def set_next_action_player(self):
-        """
-        次アクションできるプレイヤーを更新
-        """
-        next_player_id = "0" if self.action_player_id=="1" else "1"
-        actionables = self.get_actionables(next_player_id)
-        if len(actionables) == 0:
-            pass 
-        else:
-            self.action_player_id = next_player_id
-
     
     def get_actionables(self, player_id):
         """
