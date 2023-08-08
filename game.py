@@ -56,7 +56,7 @@ class Game():
             self.win_player = ""  # "1": 先行(黒)の勝ち、"0": 後攻(白)の勝ち、"2": 引き分け
             self.turn = 0  # ターン数
             logger.debug("ゲームを開始します")
-            self.print_board()
+            # self.print_board()
             self.black_count = 2
             self.white_count = 2
     
@@ -97,7 +97,7 @@ class Game():
         self.set_stone_count()
         self.turn += 1
 
-        self.print_board()
+        # self.print_board()
 
         # ゲームが終了かどうか
         is_game_over = self.check_game_over()
