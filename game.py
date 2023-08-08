@@ -95,7 +95,11 @@ class Game():
 
         # アクションを実行
         self.set_board(action, player_id)
-        self.set_stone_count()
+
+        board_list = sum(self.board, [])  # 1次元化
+        self.black_count = board_list.count("1")
+        self.white_count = board_list.count("0")
+
         self.turn += 1
 
         # self.print_board()
@@ -180,15 +184,6 @@ class Game():
 
                     # ここには来ないはず
                     logger.error("error")
-        
-    def set_stone_count(self):
-        """
-        石をカウントしてセット
-        """
-        
-        board_list = sum(self.board, [])  # 1次元化
-        self.black_count = board_list.count("1")
-        self.white_count = board_list.count("0")
     
     def get_actionables(self, player_id):
         """
