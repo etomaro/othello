@@ -279,34 +279,31 @@ class Game():
         ゲームが終了したかどうかを判定
         """
         result = False
+
         # どちらかの石が0個になった場合
-        black_count = 0
-        white_count = 0
-        for i in range(8):
-            for j in range(8):
-                if self.board[i][j] == "1":
-                    black_count += 1
-                elif self.board[i][j] == "0":
-                    white_count += 1
-        
-        if black_count == 0:
-            result = True
+        if self.black_count == 0:
             self.win_player = "0"
             self.is_game_over = True
-        elif white_count == 0:
-            result = True
+            return True
+        elif self.white_count == 0:
             self.win_player = "1"
             self.is_game_over = True
+            return True
         
         # 両者ともアクションできない場合
         black_actionables = self.get_actionables("1")
+        
+        # 光速かのため追加
+        if len(black_actionables) != 0:
+            return False
+
         white_actionables = self.get_actionables("0")
         if len(black_actionables) == 0 and len(white_actionables) == 0:
             result = True
             self.is_game_over = True
-            if black_count > white_count:
+            if self.black_count > self.white_count:
                 self.win_player = "1"
-            elif black_count < white_count:
+            elif self.black_count < self.white_count:
                 self.win_player = "0"
             else:
                 self.win_player = "2"
