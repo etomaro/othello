@@ -1,4 +1,5 @@
 import logging
+import itertools
 
 
 logging.basicConfig(level=logging.INFO, format='%(message)s')  # ここでログレベルを設定する(debug<info<warning<error)
@@ -184,17 +185,10 @@ class Game():
         """
         石をカウントしてセット
         """
-        black_count = 0
-        white_count = 0
-        for i in range(8):
-            for j in range(8):
-                if self.board[i][j] == "1":
-                    black_count += 1
-                elif self.board[i][j] == "0":
-                    white_count += 1
         
-        self.black_count = black_count
-        self.white_count = white_count
+        board_list = sum(self.board, [])  # 1次元化
+        self.black_count = board_list.count("1")
+        self.white_count = board_list.count("0")
     
     def get_actionables(self, player_id):
         """

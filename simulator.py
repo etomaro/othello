@@ -64,11 +64,11 @@ class Simulator():
 
 # ---1回test---
 first_player = MiniMaxV4Player()
-second_player = RandomPlayer()
+second_player = MiniMaxV2Player()
 simulator = Simulator(first_player, second_player)
 start = time.time()
 game_result = simulator.run()
-logger.info("v4 vs random")
+logger.info("v4 vs v2")
 logger.info(f"勝者: {game_result['win_player']}")
 logger.info(f"先行の石の数: {game_result['black_count']}")
 logger.info(f"後攻の石の数: {game_result['white_count']}")
