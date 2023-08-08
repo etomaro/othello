@@ -340,11 +340,13 @@ class Game():
         result = {
             "win_player": "",
             "black_count": 0,
-            "white_count": 0
+            "white_count": 0,
+            "turn": 0
         }
 
         if self.is_game_over:
             result["win_player"] = self.win_player
+            result["turn"] = self.turn
             for i in range(8):
                 for j in range(8):
                     if self.board[i][j] == "1":

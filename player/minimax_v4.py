@@ -2,6 +2,7 @@ from player.abstruct import Player
 import random
 import copy
 import logging
+import time
 
 
 logging.basicConfig(level=logging.INFO, format='%(message)s')  # ここでログレベルを設定する(debug<info<warning<error)
@@ -21,11 +22,19 @@ class MiniMaxV4Player(Player):
         # "1": 先行(黒)、"0": 後攻(白)
         if player_id != "":
             self.player_id = player_id
+        
+        # 探索数ノード調査
+        self.count = 0  # 1アクションごとの探索数
+        self.count_list = []
+        self.time_list = []
+        self.total_count = 0  # 1戦ごとの探索数
 
     def action(self, game):
         """
         アクションをする
         """
+        start_time = time.time()
+
         actionables = game.get_actionables(self.player_id)
         if len(actionables) == 0:
             raise Exception("アクションできません")
@@ -35,15 +44,10 @@ class MiniMaxV4Player(Player):
         next_player_id, actionables, is_game_over = game.step(action, self.player_id)
 
         # debug
-        result = ""
-        for i in range(8):
-            for j in range(8):
-                result += game.board[i][j]
-                result += " "
-            result += "\n"
-        
-        logger.info(f"---{game.turn}回目---\n{result}\n")
-        logger.info("minimax_v3 action: %s\n", action)
+        self.count_list.append(self.count)
+        self.time_list.append(time.time() - start_time)
+        self.total_count += self.count
+        self.count = 0
 
         return next_player_id, actionables, is_game_over
     
@@ -61,6 +65,8 @@ class MiniMaxV4Player(Player):
         for action in actionables:
             next_game = copy.deepcopy(game)  # インスタンスの値コピー
             next_player_id, next_actionables, next_is_game_over = next_game.step(action, self.player_id)
+
+            self.count += 1
 
             # ゲームが終了した場合
             if next_is_game_over:
@@ -86,6 +92,8 @@ class MiniMaxV4Player(Player):
             new_game = copy.deepcopy(game)  # インスタンスの値コピー
             next_player_id, next_actionables, next_is_game_over = new_game.step(action, opponent_player_id)
             
+            self.count += 1
+
             if next_is_game_over:
                 return float("-inf")
             
@@ -113,6 +121,8 @@ class MiniMaxV4Player(Player):
             new_game = copy.deepcopy(game)  # インスタンスの値コピー
             next_player_id, next_actionables, next_is_game_over = new_game.step(action, opponent_player_id)
             
+            self.count += 1
+
             if next_is_game_over:
                 return float("-inf")
             
@@ -138,6 +148,8 @@ class MiniMaxV4Player(Player):
         for action in actionables:
             new_game = copy.deepcopy(game)  # インスタンスの値コピー
             next_player_id, next_actionables, next_is_game_over = new_game.step(action, self.player_id)
+            
+            self.count += 1
             
             if next_is_game_over:
                 return float("inf")

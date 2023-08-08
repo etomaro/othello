@@ -63,16 +63,24 @@ class Simulator():
         logger.debug("後攻の石の数: ", game_result["white_count"])
 
 # ---1回test---
-first_player = MiniMaxV6Player()
+first_player = MiniMaxV4Player()
 second_player = RandomPlayer()
 simulator = Simulator(first_player, second_player)
 start = time.time()
 game_result = simulator.run()
-logger.info("v6 vs random")
+logger.info("v4 vs random")
 logger.info(f"勝者: {game_result['win_player']}")
 logger.info(f"先行の石の数: {game_result['black_count']}")
 logger.info(f"後攻の石の数: {game_result['white_count']}")
+logger.info(f"ターン数: {game_result['turn']}")
 logger.info(f"処理時間: {time.time() - start}")
+logger.info("1アクションの探索数: %s", first_player.count_list)
+logger.info("1アクションの探索平均数: %s", sum(first_player.count_list) / len(first_player.count_list))
+logger.info("1アクションの探索の最大値: %s", max(first_player.count_list))
+logger.info("1アクションの時間: %s", first_player.time_list)
+logger.info("1アクションの時間平均: %s", sum(first_player.time_list) / len(first_player.time_list))
+logger.info("1アクションの時間の最大値: %s", max(first_player.time_list))
+logger.info("1戦の探索数: %s", first_player.total_count)
 
 # ---100回test---
 # first_win_count = 0
