@@ -84,13 +84,13 @@ class Game():
             actionables: 次アクション可能なリスト
             is_game_over: ゲームが終了したかどうか
         """
-        # アクション可能か
-        if not self.is_actionable(action, player_id):
-            logger.error(
-                "プレイヤーID: %s\nアクション: %s\n可能なアクション: %s",
-                player_id, action, self.get_actionables(player_id)
-            )
-            raise Exception("不正なアクションです")
+        # アクション可能か(速度節約のため)
+        # if not self.is_actionable(action, player_id):
+        #     logger.error(
+        #         "プレイヤーID: %s\nアクション: %s\n可能なアクション: %s",
+        #         player_id, action, self.get_actionables(player_id)
+        #     )
+        #     raise Exception("不正なアクションです")
 
         # アクションを実行
         self.set_board(action, player_id)
