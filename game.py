@@ -39,7 +39,8 @@ class Game():
               -> 1次元配列            
         """
         if game_info is not None:
-            self.board = game_info["board"]
+            self.black_board = game_info["black_board"]
+            self.white_board = game_info["white_board"]
             self.action_player_id = game_info["action_player_id"]
             self.is_game_over = game_info["is_game_over"]
             self.win_player = game_info["win_player"]
