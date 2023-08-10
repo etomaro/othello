@@ -10,6 +10,7 @@ from player.minimax_v3 import MiniMaxV3Player
 from player.minimax_v4 import MiniMaxV4Player
 from player.minimax_v5 import MiniMaxV5Player
 from player.minimax_v6 import MiniMaxV6Player
+from player.minimax_v4v2 import MiniMaxV4V2Player
 
 logging.basicConfig(level=logging.INFO, format='%(message)s')  # ここでログレベルを設定する(debug<info<warning<error)
 logger = logging.getLogger(__name__)
@@ -63,8 +64,8 @@ class Simulator():
         logger.debug("後攻の石の数: ", game_result["white_count"])
 
 # ---1回test---
-first_player = MiniMaxV1Player()
-second_player = RandomPlayer()
+first_player = MiniMaxV4V2Player()
+second_player = MiniMaxV4Player()
 simulator = Simulator(first_player, second_player)
 start = time.time()
 game_result = simulator.run()

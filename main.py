@@ -87,7 +87,8 @@ def action(info: Info):
 
         next_player_id, actionables, is_game_over = player.action(game)
     else:
-        next_player_id, actionables, is_game_over = game.step(info["action"], info["game_info"]["action_player_id"])
+        action = decodeAction(info["action"])
+        next_player_id, actionables, is_game_over = game.step(action, info["game_info"]["action_player_id"])
     
     actionables = encodeActionables(actionables)
     board = encodeBoard(game.white_board, game.black_board)
