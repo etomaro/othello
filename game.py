@@ -113,7 +113,7 @@ class Game():
         # ゲームが終了かどうか
         is_game_over = self.check_game_over()
         if is_game_over:
-            return "", [], True
+            return "", 0x0, True
 
         # 次アクション可能なリストを取得
         next_player_id = "0" if self.action_player_id=="1" else "1"
