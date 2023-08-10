@@ -210,6 +210,9 @@ class MiniMaxV4V2Player(Player):
           + 相手の端の数 * -10
           + 自分の石の数 * 1
           + 相手の石の数 * -1
+        
+        (36ターン以降)
+            (自分の石 - 相手の石) * 1
         """
 
         black_count = game.black_count
@@ -231,22 +234,64 @@ class MiniMaxV4V2Player(Player):
         white_edge_count = bin(game.white_board & mask_edge).count("1")
 
         # 評価値を計算
-        if self.player_id == "1":
-            result += black_count * 1
-            result += white_count * -1
-            result += black_corner_count * 100
-            result += white_corner_count * -100
-            result += black_edge_count * 10
-            result += white_edge_count * -10
-        elif self.player_id == "0":
-            result += black_count * -1
-            result += white_count * 1
-            result += black_corner_count * -100
-            result += white_corner_count * 100
-            result += black_edge_count * -10
-            result += white_edge_count * 10
+        if game.turn < 30:
+            if self.player_id == "1":
+                result += black_count * 1
+                result += white_count * -1
+                result += black_corner_count * 100
+                result += white_corner_count * -100
+                result += black_edge_count * 10
+                result += white_edge_count * -10
+            elif self.player_id == "0":
+                result += black_count * -1
+                result += white_count * 1
+                result += black_corner_count * -100
+                result += white_corner_count * 100
+                result += black_edge_count * -10
+                result += white_edge_count * 10
+            else:
+                logger.error("不正なプレイヤーIDです")
+        elif game.turn < 40:
+            if self.player_id == "1":
+                result += black_count * 3
+                result += white_count * -3
+                result += black_corner_count * 100
+                result += white_corner_count * -100
+                result += black_edge_count * 10
+                result += white_edge_count * -10
+            elif self.player_id == "0":
+                result += black_count * -3
+                result += white_count * 3
+                result += black_corner_count * -100
+                result += white_corner_count * 100
+                result += black_edge_count * -10
+                result += white_edge_count * 10
+            else:
+                logger.error("不正なプレイヤーIDです")
+        elif game.turn < 50:
+            if self.player_id == "1":
+                result += black_count * 10
+                result += white_count * -10
+                result += black_corner_count * 100
+                result += white_corner_count * -100
+                result += black_edge_count * 10
+                result += white_edge_count * -10
+            elif self.player_id == "0":
+                result += black_count * -10
+                result += white_count * 10
+                result += black_corner_count * -100
+                result += white_corner_count * 100
+                result += black_edge_count * -10
+                result += white_edge_count * 10
+            else:
+                logger.error("不正なプレイヤーIDです")
         else:
-            logger.error("不正なプレイヤーIDです")
+            if self.player_id == "1":
+                result = black_count - white_count
+            elif self.player_id == "0":
+                result = white_count - black_count
+            else:
+                logger.error("不正なプレイヤーIDです")
         
         return result 
     
