@@ -131,6 +131,8 @@ def encodeActionables(actionables):
     16進数64bitから2次元配列に変換する
     """
     result = []
+    if actionables == 0x0000000000000000:
+        return result
     for i in range(64):
         if actionables & (0x8000000000000000 >> i):
             result.append([i // 8, i % 8])
