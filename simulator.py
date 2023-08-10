@@ -63,8 +63,8 @@ class Simulator():
         logger.debug("後攻の石の数: ", game_result["white_count"])
 
 # ---1回test---
-first_player = MiniMaxV4Player()
-second_player = MiniMaxV2Player()
+first_player = MiniMaxV1Player()
+second_player = RandomPlayer()
 simulator = Simulator(first_player, second_player)
 start = time.time()
 game_result = simulator.run()

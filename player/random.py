@@ -13,10 +13,18 @@ class RandomPlayer(Player):
         アクションをする
         """
         actionables = game.get_actionables(self.player_id)
-        if len(actionables) == 0:
+        if actionables == 0:
             raise Exception("アクションできません")
         
-        action = random.choice(actionables)
+        # ランダムに手を選択する
+        actionables_list = []
+        mask = 0x8000000000000000
+        for i in range(64):
+            if mask & actionables != 0:
+                actionables_list.append(mask)
+            mask = mask >> 1
+
+        action = random.choice(actionables_list)
         next_player_id, actionables, is_game_over = game.step(action, self.player_id)
 
         return next_player_id, actionables, is_game_over

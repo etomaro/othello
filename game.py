@@ -47,11 +47,8 @@ class Game():
             self.black_count = game_info["black_count"]
             self.white_count = game_info["white_count"]
         else:
-            self.board = [[ "." for j in range(8)] for i in range(8)]  # ボードの初期化(後攻(白): 0, 先行(黒): 1, 空き: .)
-            self.board[3][3] = "0"
-            self.board[4][4] = "0"
-            self.board[3][4] = "1"
-            self.board[4][3] = "1"
+            self.black_board = 0x0000000810000000
+            self.white_board = 0x0000001008000000
             self.action_player_id = "1"  # "1": 先行(黒)、"0": 後攻(白)
             self.is_game_over = False
             self.win_player = ""  # "1": 先行(黒)の勝ち、"0": 後攻(白)の勝ち、"2": 引き分け
@@ -65,14 +62,21 @@ class Game():
         """
         ボードの状態を出力
         """
+        white_board_str = bin(self.white_board)[2:].zfill(64)  # 64bitの文字列に変換
+        black_board_str = bin(self.black_board)[2:].zfill(64)
         result = ""
-        for i in range(8):
-            for j in range(8):
-                result += self.board[i][j]
-                result += " "
-            result += "\n"
+        # print(len(white_board_str), len(black_board_str))
+        for i in range(64):
+            if white_board_str[i] == "1":
+                result += "0"
+            elif black_board_str[i] == "1":
+                result += "1"
+            else:
+                result += "."
+            if i % 8 == 7:
+                result += "\n"
         
-        logger.debug(f"---{self.turn}回目---\n{result}\n")
+        logger.info(f"---{self.turn}回目---\n{result}\n")
 
             
 
@@ -96,9 +100,10 @@ class Game():
         # アクションを実行
         self.set_board(action, player_id)
 
-        board_list = sum(self.board, [])  # 1次元化
-        self.black_count = board_list.count("1")
-        self.white_count = board_list.count("0")
+        # 石の数を更新
+        
+        self.black_count = bin(self.black_board).count("1")
+        self.white_count = bin(self.white_board).count("1")
 
         self.turn += 1
 
@@ -114,7 +119,7 @@ class Game():
         actionables = self.get_actionables(next_player_id)
         
         # 次のアクション可能なプレイヤーを更新
-        if len(actionables) == 0:
+        if actionables == 0:
             actionables = self.get_actionables(self.action_player_id)
         else:
             self.action_player_id = next_player_id
@@ -125,132 +130,208 @@ class Game():
         """
         ボードの更新
         """
-        opponent_player_id = "0" if player_id=="1" else "1"
+        mask_lr = 0x7e7e7e7e7e7e7e7e
+        mask_ud = 0x00ffffffffffff00
+        mask_lu_ru_ld_rd = 0x007e7e7e7e7e7e00
 
-        self.board[action[0]][action[1]] = player_id
+        reverse = 0x0000000000000000
 
-        # 2. 挟める石を挟む
-        # 周りの8隅の座標
-        frame_places = [[action[0]-1, action[1]-1], [action[0]-1, action[1]], [action[0]-1, action[1]+1], [action[0], action[1]-1], [action[0], action[1]+1], [action[0]+1, action[1]-1], [action[0]+1, action[1]], [action[0]+1, action[1]+1]]
-        # 周りの8個に相手の石があるかどうか。ある場合挟めるかどうか判定
-        change_places_all = []  # 挟んだすべての石の座標
-        for frame_place in frame_places:
-            frame_row, frame_col = frame_place
-            # ボードの外に出る場合は除外
-            if frame_row < 0 or frame_row > 7 or frame_col < 0 or frame_col > 7:
-                continue
-            # 自分の石がある場合は除外
-            if self.board[frame_row][frame_col] == player_id:
-                continue
-            # 石がない場合は除外
-            if self.board[frame_row][frame_col] == ".":
-                continue
-            # 相手の石がある場合
-            change_places = []  # 挟める石の座標
-            if self.board[frame_row][frame_col] == opponent_player_id:
-                # 挟める石を追加
-                change_places.append([frame_row, frame_col])
-                # ベクトル(周りの8個の座標 - 相手の石の場所の座標)
-                vector = [frame_row - action[0], frame_col - action[1]]
-                # 自分の石があるまでループ
-                next_row = frame_row + vector[0]
-                next_col = frame_col + vector[1]
-                while True:
-                    # ボードの外に出る場合は除外
-                    if next_row < 0 or next_row > 7 or next_col < 0 or next_col > 7:
-                        break 
-                    # 石が置かれていない場合は除外
-                    if self.board[next_row][next_col] == ".":
-                        break
-                    # 自分の石がある場合は挟める
-                    if self.board[next_row][next_col] == player_id:
-                        # 挟む
-                        for change_place in change_places:
-                            change_row, change_col = change_place
-                            # stateの更新
-                            self.board[change_row][change_col] = player_id
+        # 石を置く
+        if player_id == "1":
+            mask_left = mask_lr & self.white_board  # 左方向
+            mask_right = mask_lr & self.white_board
+            mask_up = mask_ud & self.white_board
+            mask_down = mask_ud & self.white_board
+            mask_left_up = mask_lu_ru_ld_rd & self.white_board
+            mask_right_up = mask_lu_ru_ld_rd & self.white_board
+            mask_left_down = mask_lu_ru_ld_rd & self.white_board
+            mask_right_down = mask_lu_ru_ld_rd & self.white_board
 
-                            # 挟んだ石の座標を追加
-                            change_places_all.append([change_row, change_col])
-                        break
-                    # 相手の石がある場合は次の座標を更新
-                    if self.board[next_row][next_col] == opponent_player_id:
-                        # 挟める石を追加
-                        change_places.append([next_row, next_col])
+            l_rev = (action << 1) & mask_left
+            r_rev = (action >> 1) & mask_right
+            u_rev = (action << 8) & mask_up
+            d_rev = (action >> 8) & mask_down
+            lu_rev = (action << 7) & mask_left_up
+            ru_rev = (action << 9) & mask_right_up
+            ld_rev = (action >> 9) & mask_left_down
+            rd_rev = (action >> 7) & mask_right_down
 
-                        next_row += vector[0]
-                        next_col += vector[1]
-                        continue
-
-                    # ここには来ないはず
-                    logger.error("error")
+            for i in range(5):
+                l_rev |= (l_rev << 1) & mask_left
+                r_rev |= (r_rev >> 1) & mask_right
+                u_rev |= (u_rev << 8) & mask_up
+                d_rev |= (d_rev >> 8) & mask_down
+                lu_rev |= (lu_rev << 7) & mask_left_up
+                ru_rev |= (ru_rev << 9) & mask_right_up
+                ld_rev |= (ld_rev >> 9) & mask_left_down
+                rd_rev |= (rd_rev >> 7) & mask_right_down
     
+            if (l_rev << 1) & self.black_board != 0:
+                reverse |= l_rev
+            if (r_rev >> 1) & self.black_board != 0:
+                reverse |= r_rev
+            if (u_rev << 8) & self.black_board != 0:
+                reverse |= u_rev
+            if (d_rev >> 8) & self.black_board != 0:
+                reverse |= d_rev
+            if (lu_rev << 7) & self.black_board != 0:
+                reverse |= lu_rev
+            if (ru_rev << 9) & self.black_board != 0:
+                reverse |= ru_rev
+            if (ld_rev >> 9) & self.black_board != 0:
+                reverse |= ld_rev
+            if (rd_rev >> 7) & self.black_board != 0:
+                reverse |= rd_rev
+
+            self.black_board |= (action | reverse)
+            self.white_board ^= reverse
+        
+        elif player_id == "0":
+            mask_left = mask_lr & self.black_board  # 左方向
+            mask_right = mask_lr & self.black_board
+            mask_up = mask_ud & self.black_board
+            mask_down = mask_ud & self.black_board
+            mask_left_up = mask_lu_ru_ld_rd & self.black_board
+            mask_right_up = mask_lu_ru_ld_rd & self.black_board
+            mask_left_down = mask_lu_ru_ld_rd & self.black_board
+            mask_right_down = mask_lu_ru_ld_rd & self.black_board
+
+            l_rev = (action << 1) & mask_left
+            r_rev = (action >> 1) & mask_right
+            u_rev = (action << 8) & mask_up
+            d_rev = (action >> 8) & mask_down
+            lu_rev = (action << 7) & mask_left_up
+            ru_rev = (action << 9) & mask_right_up
+            ld_rev = (action >> 9) & mask_left_down
+            rd_rev = (action >> 7) & mask_right_down
+
+            for i in range(5):
+                l_rev |= (l_rev << 1) & mask_left
+                r_rev |= (r_rev >> 1) & mask_right
+                u_rev |= (u_rev << 8) & mask_up
+                d_rev |= (d_rev >> 8) & mask_down
+                lu_rev |= (lu_rev << 7) & mask_left_up
+                ru_rev |= (ru_rev << 9) & mask_right_up
+                ld_rev |= (ld_rev >> 9) & mask_left_down
+                rd_rev |= (rd_rev >> 7) & mask_right_down
+            
+            if (l_rev << 1) & self.white_board != 0:
+                reverse |= l_rev
+            if (r_rev >> 1) & self.white_board != 0:
+                reverse |= r_rev
+            if (u_rev << 8) & self.white_board != 0:
+                reverse |= u_rev
+            if (d_rev >> 8) & self.white_board != 0:
+                reverse |= d_rev
+            if (lu_rev << 7) & self.white_board != 0:
+                reverse |= lu_rev
+            if (ru_rev << 9) & self.white_board != 0:
+                reverse |= ru_rev
+            if (ld_rev >> 9) & self.white_board != 0:
+                reverse |= ld_rev
+            if (rd_rev >> 7) & self.white_board != 0:
+                reverse |= rd_rev
+
+            self.white_board |= (action | reverse)
+            self.black_board ^= reverse
+        else:
+            logger.error("不正なプレイヤーIDです")
+
     def get_actionables(self, player_id):
         """
         可能なアクションを返却
 
         処理:
-          1. 石が置かれていない場所を取得
-          2. 1で取得した座標に石を置くことができるか判定
-             周りの8隅に相手の石が存在するか
-             存在する場合、そのベクトル上で相手の石を挟めるかどうか
+          1. 左方向に対してい置ける場所を取得
+          2. 右方向に対してい置ける場所を取得
+          3. 上方向に対してい置ける場所を取得
+          4. 下方向に対してい置ける場所を取得
+          5. 左上方向に対してい置ける場所を取得
+          6. 右上方向に対してい置ける場所を取得
+          7. 左下方向に対してい置ける場所を取得
+          8. 右下方向に対してい置ける場所を取得
         """
-        
-        # 1. 石が置かれていない場所を取得
-        empty_places = []
-        for i in range(8):
-            for j in range(8):
-                if self.board[i][j] == ".":
-                    empty_places.append([i, j])
-        
-        # 2. 石を置くことができるか判定
-        actionables = []
-        opponent_player_id = "0" if player_id=="1" else "1"
-        for empty_place in empty_places:
-            row, col = empty_place
-            # 周りの8隅の座標
-            frame_places = [[row-1, col-1], [row-1, col], [row-1, col+1], [row, col-1], [row, col+1], [row+1, col-1], [row+1, col], [row+1, col+1]]
-            # 周りの8個に相手の石があるかどうか。ある場合挟めるかどうか判定
-            for frame_place in frame_places:
-                frame_row, frame_col = frame_place
-                # ボードの外に出る場合は除外
-                if frame_row < 0 or frame_row > 7 or frame_col < 0 or frame_col > 7:
-                    continue
-                # アクションをするプレイヤーの石がある場合は除外
-                if self.board[frame_row][frame_col] == player_id:
-                    continue
-                # 石がない場合は除外
-                if self.board[frame_row][frame_col] == ".":
-                    continue
-                # 相手の石がある場合
-                if self.board[frame_row][frame_col] == opponent_player_id:
-                    # ベクトル(周りの8個の座標 - 相手の石の場所の座標)
-                    vector = [frame_row - row, frame_col - col]
-                    # 自分の石があるまでループ
-                    next_row = frame_row + vector[0]
-                    next_col = frame_col + vector[1]
-                    while True:
-                        # ボードの外に出る場合は除外
-                        if next_row < 0 or next_row > 7 or next_col < 0 or next_col > 7:
-                            break 
-                        # 石が置かれていない場合は除外
-                        if self.board[next_row][next_col] == ".":
-                            break
-                        # 自分の石がある場合は挟める
-                        if self.board[next_row][next_col] == player_id:
-                            if empty_place not in actionables:
-                                actionables.append(empty_place)
-                            break
-                        # 相手の石がある場合は次の座標を更新
-                        if self.board[next_row][next_col] == opponent_player_id:
-                            next_row += vector[0]
-                            next_col += vector[1]
-                            continue
+        mask_lr = 0x7e7e7e7e7e7e7e7e
+        mask_ud = 0x00ffffffffffff00
+        mask_lu_ru_ld_rd = 0x007e7e7e7e7e7e00
 
-                        # ここには来ないはず
-                        logger.error("error")
+        # 空白の場所
+        blank_board = ~(self.black_board | self.white_board)
 
-        return actionables
+
+        if player_id == "1":
+            # 1. 左方向に対してい置ける場所を取得
+            white_lr_mask = self.white_board & mask_lr  # 列1-6かつ白の場所
+            white_ud_mask = self.white_board & mask_ud
+            white_mask_lu_ru_ld_rd = self.white_board & mask_lu_ru_ld_rd
+
+            l_white = (self.black_board << 1) & white_lr_mask  # 黒の1つ左の場所かつ列1-6かつ白の場所
+            r_white = (self.black_board >> 1) & white_lr_mask
+            u_white = (self.black_board << 8) & white_ud_mask
+            d_white = (self.black_board >> 8) & white_ud_mask
+            lu_white = (self.black_board << 9) & white_mask_lu_ru_ld_rd
+            ru_white = (self.black_board << 7) & white_mask_lu_ru_ld_rd
+            ld_white = (self.black_board >> 7) & white_mask_lu_ru_ld_rd
+            rd_white = (self.black_board >> 9) & white_mask_lu_ru_ld_rd
+
+            for i in range(5):
+                l_white |= (l_white << 1) & white_lr_mask  # 上記に当てはまる場所(l_white)かつ1つ左の白かつ列1-6の場所(white_lr_maskに当てはまる箇所)を追加
+                r_white |= (r_white >> 1) & white_lr_mask
+                u_white |= (u_white << 8) & white_ud_mask
+                d_white |= (d_white >> 8) & white_ud_mask
+                lu_white |= (lu_white << 9) & white_mask_lu_ru_ld_rd
+                ru_white |= (ru_white << 7) & white_mask_lu_ru_ld_rd
+                ld_white |= (ld_white >> 7) & white_mask_lu_ru_ld_rd
+                rd_white |= (rd_white >> 9) & white_mask_lu_ru_ld_rd
+
+            legal_left = (l_white << 1) & blank_board
+            legal_right = (r_white >> 1) & blank_board
+            legal_up = (u_white << 8) & blank_board
+            legal_down = (d_white >> 8) & blank_board
+            legal_lu = (lu_white << 9) & blank_board
+            legal_ru = (ru_white << 7) & blank_board
+            legal_ld = (ld_white >> 7) & blank_board
+            legal_rd = (rd_white >> 9) & blank_board
+        elif player_id == "0":
+            # 1. 左方向に対してい置ける場所を取得
+            black_lr_mask = self.black_board & mask_lr  # 列1-6かつ白の場所
+            black_ud_mask = self.black_board & mask_ud
+            black_mask_lu_ru_ld_rd = self.black_board & mask_lu_ru_ld_rd
+
+            l_black = (self.white_board << 1) & black_lr_mask  # 黒の1つ左の場所かつ列1-6かつ白の場所
+            r_black = (self.white_board >> 1) & black_lr_mask
+            u_black = (self.white_board << 8) & black_ud_mask
+            d_black = (self.white_board >> 8) & black_ud_mask
+            lu_black = (self.white_board << 9) & black_mask_lu_ru_ld_rd
+            ru_black = (self.white_board << 7) & black_mask_lu_ru_ld_rd
+            ld_black = (self.white_board >> 7) & black_mask_lu_ru_ld_rd
+            rd_black = (self.white_board >> 9) & black_mask_lu_ru_ld_rd
+
+            for i in range(5):
+                l_black |= (l_black << 1) & black_lr_mask  # 上記に当てはまる場所(l_black)かつ1つ左の白かつ列1-6の場所(black_lr_maskに当てはまる箇所)を追加
+                r_black |= (r_black >> 1) & black_lr_mask
+                u_black |= (u_black << 8) & black_ud_mask
+                d_black |= (d_black >> 8) & black_ud_mask
+                lu_black |= (lu_black << 9) & black_mask_lu_ru_ld_rd
+                ru_black |= (ru_black << 7) & black_mask_lu_ru_ld_rd
+                ld_black |= (ld_black >> 7) & black_mask_lu_ru_ld_rd
+                rd_black |= (rd_black >> 9) & black_mask_lu_ru_ld_rd
+
+            legal_left = (l_black << 1) & blank_board
+            legal_right = (r_black >> 1) & blank_board
+            legal_up = (u_black << 8) & blank_board
+            legal_down = (d_black >> 8) & blank_board
+            legal_lu = (lu_black << 9) & blank_board
+            legal_ru = (ru_black << 7) & blank_board
+            legal_ld = (ld_black >> 7) & blank_board
+            legal_rd = (rd_black >> 9) & blank_board
+        else:
+            logger.error("不正なプレイヤーIDです")
+
+        # 9. 1-8の合計
+        legal = legal_left | legal_right | legal_up | legal_down | legal_lu | legal_ru | legal_ld | legal_rd
+
+        return legal
 
     def is_actionable(self, action, player_id):
         """
@@ -294,11 +375,11 @@ class Game():
         black_actionables = self.get_actionables("1")
         
         # 光速かのため追加
-        if len(black_actionables) != 0:
+        if black_actionables != 0:
             return False
 
         white_actionables = self.get_actionables("0")
-        if len(black_actionables) == 0 and len(white_actionables) == 0:
+        if black_actionables == 0 and white_actionables == 0:
             result = True
             self.is_game_over = True
             if self.black_count > self.white_count:
@@ -324,12 +405,8 @@ class Game():
         if self.is_game_over:
             result["win_player"] = self.win_player
             result["turn"] = self.turn
-            for i in range(8):
-                for j in range(8):
-                    if self.board[i][j] == "1":
-                        result["black_count"] += 1
-                    elif self.board[i][j] == "0":
-                        result["white_count"] += 1
+            result["black_count"] = self.black_count
+            result["white_count"] = self.white_count
         
         return result
 

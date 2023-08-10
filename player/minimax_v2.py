@@ -31,7 +31,7 @@ class MiniMaxV2Player(Player):
         start_time = time.time()
 
         actionables = game.get_actionables(self.player_id)
-        if len(actionables) == 0:
+        if actionables == 0:
             raise Exception("アクションできません")
         
         tmp_game = copy.deepcopy(game)
@@ -51,13 +51,21 @@ class MiniMaxV2Player(Player):
         最適な手を選択する
         """
         actionables = game.get_actionables(self.player_id)
-        if len(actionables) == 0:
+        if actionables == 0:
             raise Exception("アクションできません")
         
         # 価値が最も高い手を選択する
         max_value = float("-inf")  # マイナス無限
         max_action = None
-        for action in actionables:
+
+        actionables_list = []
+        mask = 0x8000000000000000
+        for i in range(64):
+            if mask & actionables != 0:
+                actionables_list.append(mask)
+            mask = mask >> 1
+
+        for action in actionables_list:
             next_game = copy.deepcopy(game)  # インスタンスの値コピー
             next_player_id, next_actionables, next_is_game_over = next_game.step(action, self.player_id)
 
@@ -82,7 +90,15 @@ class MiniMaxV2Player(Player):
         min_value = float("inf")  # 無限
         opponent_player_id = "1" if self.player_id == "0" else "0"
         actionables = game.get_actionables(opponent_player_id)
-        for action in actionables:
+
+        actionables_list = []
+        mask = 0x8000000000000000
+        for i in range(64):
+            if mask & actionables != 0:
+                actionables_list.append(mask)
+            mask = mask >> 1
+
+        for action in actionables_list:
             new_game = copy.deepcopy(game)  # インスタンスの値コピー
             next_player_id, next_actionables, next_is_game_over = new_game.step(action, opponent_player_id)
 
@@ -121,35 +137,14 @@ class MiniMaxV2Player(Player):
         result = 0
 
         # 角の数を計算
-        if game.board[0][0] == "1":
-            black_corner_count += 1
-        elif game.board[0][0] == "0":
-            white_corner_count += 1
-        if game.board[0][7] == "1":
-            black_corner_count += 1
-        elif game.board[0][7] == "0":
-            white_corner_count += 1
-        if game.board[7][0] == "1":
-            black_corner_count += 1
-        elif game.board[7][0] == "0":
-            white_corner_count += 1
-        if game.board[7][7] == "1":
-            black_corner_count += 1
-        elif game.board[7][7] == "0":
-            white_corner_count += 1
+        mask_corner = 0x8100000000000081
+        black_corner_count = bin(game.black_board & mask_corner).count("1")
+        white_corner_count = bin(game.white_board & mask_corner).count("1")
         
         # 端の数を計算
-        edge_list = [
-            [0,1], [0,2], [0,3], [0,4], [0,5], [0,6],
-            [1,0], [2,0], [3,0], [4,0], [5,0], [6,0],
-            [1,7], [2,7], [3,7], [4,7], [5,7], [6,7],
-            [7,1], [7,2], [7,3], [7,4], [7,5], [7,6],
-        ]
-        for edge in edge_list:
-            if game.board[edge[0]][edge[1]] == "1":
-                black_edge_count += 1
-            elif game.board[edge[0]][edge[1]] == "0":
-                white_edge_count += 1
+        mask_edge = 0x7e8181818181817e
+        black_edge_count = bin(game.black_board & mask_edge).count("1")
+        white_edge_count = bin(game.white_board & mask_edge).count("1")
 
         # 評価値を計算
         if self.player_id == "1":
