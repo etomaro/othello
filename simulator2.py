@@ -1,4 +1,7 @@
-from game import Game
+"""
+クラスインスタンスを廃止したバージョン
+"""
+from game2 import *
 import time
 import logging
 from player.random import RandomPlayer
@@ -26,13 +29,12 @@ class Simulator():
         self.player1.player_id = "1"  # 先行
         self.player0.player_id = "0"  # 後攻
 
-        self.game = Game()  # ゲームインスタンス作成
-
     def run(self):
         """
         ゲームを実行する
         """
         action_player = self.player1  # 先行のプレイヤーからスタート
+        game_info = get_game_init()
         while True:
             ##debug
             # result = ""
@@ -44,9 +46,9 @@ class Simulator():
             
             # logger.info(f"---{self.game.turn}回目---\n{result}\n")
 
-            next_player_id, actionables, is_game_over = action_player.action(self.game)
+            next_player_id, actionables, is_game_over, next_game_info = action_player.action(game_info)
             if is_game_over:
-                return self.game.get_result()
+                return next_game_info
 
             # 次のプレイヤーを決定
             if next_player_id == "1":
@@ -56,16 +58,11 @@ class Simulator():
             else:
                 raise Exception("不正なプレイヤーIDです")
             
-
-        game_result = self.game.get_result()
-        logger.debug("---ゲーム終了---")
-        logger.debug(f"勝者: {game_result['win_player']}")
-        logger.debug("先行の石の数: ", game_result["black_count"])
-        logger.debug("後攻の石の数: ", game_result["white_count"])
+            game_info = next_game_info
 
 # ---1回test---
-first_player = MiniMaxV3Player()
-second_player = MiniMaxV4Player()
+first_player = MiniMaxV5Player()
+second_player = MiniMaxV5Player()
 simulator = Simulator(first_player, second_player)
 start = time.time()
 game_result = simulator.run()
@@ -82,37 +79,3 @@ logger.info("1アクションの時間: %s", first_player.time_list)
 logger.info("1アクションの時間平均: %s", sum(first_player.time_list) / len(first_player.time_list))
 logger.info("1アクションの時間の最大値: %s", max(first_player.time_list))
 logger.info("1戦の探索数: %s", first_player.total_count)
-
-# ---100回test---
-# first_win_count = 0
-# second_win_count = 0
-# draw_count = 0
-
-# first_player = MiniMaxV4Player()
-# second_player = RandomPlayer()
-
-# 時間を測定
-# start = time.time()
-# for i in range(10):
-#     simulator = Simulator(first_player, second_player)
-#     result = simulator.run()
-#     if result["win_player"] == "1":
-#         first_win_count += 1
-#     elif result["win_player"] == "0":
-#         second_win_count += 1
-#     elif result["win_player"] == "2":
-#         draw_count += 1
-#     else:
-#         raise Exception("不正な勝者です")
-
-#     logger.info(f"---{i}回目のゲーム終了---")
-
-
-# print("minimax_v4 vs random")
-# logger.info(f"先行の勝利数: {first_win_count}")
-# logger.info(f"後攻の勝利数: {second_win_count}")
-# logger.info(f"引き分け数: {draw_count}")
-# logger.info(f"処理時間: {time.time() - start}")
-
-
-

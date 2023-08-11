@@ -3,7 +3,7 @@ import random
 import copy
 import logging
 import time
-
+from game2 import *
 
 logging.basicConfig(level=logging.INFO, format='%(message)s')  # ここでログレベルを設定する(debug<info<warning<error)
 logger = logging.getLogger(__name__)
@@ -11,12 +11,7 @@ logger = logging.getLogger(__name__)
 
 class MiniMaxV5Player(Player):
     """
-    MINIMAXを導入
-      mini_value()の時にαカットを検討
-      max2_value()の時にβカットを検討
-      mini2_value()の時にαカットを検討
-    4手先まで行動(自分と相手が一回ずつ行動)した後の状態で価値を決めて、min(),max()で最適な手を選択する
-    評価関数を設定
+    ゲームインスタンスクラスを使わない
     """
     def __init__(self, player_id=""):
         # "1": 先行(黒)、"0": 後攻(白)
@@ -29,7 +24,7 @@ class MiniMaxV5Player(Player):
         self.time_list = []
         self.total_count = 0  # 1戦ごとの探索数
 
-    def action(self, game):
+    def action(self, game_info):
         """
         アクションをする
         """
@@ -38,20 +33,12 @@ class MiniMaxV5Player(Player):
         # actionables = game.get_actionables(self.player_id)
         # if actionables == 0:
         #     raise Exception("アクションできません")
-        raw_game_info = {
-            "black_board": game.black_board,
-            "white_board": game.white_board,
-            "action_player_id": game.action_player_id,
-            "is_game_over": game.is_game_over,
-            "turn": game.turn,
-            "black_count": game.black_count,
-            "white_count": game.white_count,
-        }
-        action = self._choice(game)
+        tmp_game_info = game_info.copy()
+
+        action = self._choice(tmp_game_info)
 
         # ゲーム情報を元に戻す
-        self.setting_game(game, raw_game_info)
-        next_player_id, actionables, is_game_over = game.step(action, self.player_id)
+        next_player_id, actionables, is_next_game_over, next_game_info = step(action, self.player_id, game_info)
 
         # debug
         self.count_list.append(self.count)
@@ -59,7 +46,7 @@ class MiniMaxV5Player(Player):
         self.total_count += self.count
         self.count = 0
 
-        return next_player_id, actionables, is_game_over
+        return next_player_id, actionables, is_next_game_over, next_game_info
 
     def setting_game(self, game, game_info):
         game.black_board = game_info["black_board"]
@@ -70,11 +57,11 @@ class MiniMaxV5Player(Player):
         game.black_count = game_info["black_count"]
         game.white_count = game_info["white_count"]
     
-    def _choice(self, game):
+    def _choice(self, game_info):
         """
         最適な手を選択する
         """
-        actionables = game.get_actionables(self.player_id)
+        actionables = get_actionables(self.player_id, game_info["black_board"], game_info["white_board"])
         if actionables == 0:
             raise Exception("アクションできません")
         
@@ -91,19 +78,10 @@ class MiniMaxV5Player(Player):
 
         search_depth = 1  # 探索深さ
 
-        game_info = {
-            "black_board": game.black_board,
-            "white_board": game.white_board,
-            "action_player_id": game.action_player_id,
-            "is_game_over": game.is_game_over,
-            "turn": game.turn,
-            "black_count": game.black_count,
-            "white_count": game.white_count,
-        }
         actionables_list.reverse()
         for action in actionables_list:
-            self.setting_game(game, game_info)
-            next_player_id, next_actionables, next_is_game_over = game.step(action, self.player_id)
+            tmp_game_info = game_info.copy()
+            next_player_id, next_actionables, next_is_game_over, next_game_info = step(action, self.player_id, tmp_game_info)
 
             self.count += 1
 
@@ -112,9 +90,9 @@ class MiniMaxV5Player(Player):
                 return action
             
             if next_player_id == self.player_id:
-                value = self._max_value(game, None, search_depth, next_actionables, next_player_id)
+                value = self._max_value(None, search_depth, next_actionables, next_player_id, next_game_info)
             else:
-                value = self._min_value(game, max_value, search_depth, next_actionables, next_player_id)
+                value = self._min_value(max_value, search_depth, next_actionables, next_player_id, next_game_info)
 
             if value >= max_value:
                 max_value = value
@@ -125,7 +103,7 @@ class MiniMaxV5Player(Player):
         
         return max_action
 
-    def _min_value(self, game, alfa, search_depth, actionables, action_player_id):
+    def _min_value(self, alfa, search_depth, actionables, action_player_id, game_info):
         """
         最小値を返す
         """
@@ -141,37 +119,28 @@ class MiniMaxV5Player(Player):
         
         search_depth += 1
 
-        game_info = {
-            "black_board": game.black_board,
-            "white_board": game.white_board,
-            "action_player_id": game.action_player_id,
-            "is_game_over": game.is_game_over,
-            "turn": game.turn,
-            "black_count": game.black_count,
-            "white_count": game.white_count,
-        }
         actionables_list.reverse()
         for action in actionables_list:
-            self.setting_game(game, game_info)
-            next_player_id, next_actionables, next_is_game_over = game.step(action, action_player_id)
+            tmp_game_info = game_info.copy()
+            next_player_id, next_actionables, next_is_game_over, next_game_info = step(action, action_player_id, tmp_game_info)
             
             self.count += 1
 
             if next_is_game_over:
                 # 引き分けの時は0を返す
-                if game.win_player == "2":
+                if next_game_info["win_player"] == "2":
                     return 0
                 else:
                     return float("-inf")
             
             # 状態の価値を計算
             if search_depth == 4:
-                value = self._evaluate(game)
+                value = self._evaluate(next_game_info)
             else:
                 if next_player_id == self.player_id:
-                    value = self._max_value(game, min_value, search_depth, next_actionables, next_player_id)
+                    value = self._max_value(min_value, search_depth, next_actionables, next_player_id, next_game_info)
                 else:
-                    value = self._min_value(game, None, search_depth, next_actionables, next_player_id)
+                    value = self._min_value(None, search_depth, next_actionables, next_player_id, next_game_info)
 
             if value < min_value:
                 min_value = value
@@ -182,7 +151,7 @@ class MiniMaxV5Player(Player):
         
         return min_value
 
-    def _max_value(self, game, beta, search_depth, actionables, action_player_id):
+    def _max_value(self, beta, search_depth, actionables, action_player_id, game_info):
         """
         最大値を返す
         """
@@ -198,37 +167,28 @@ class MiniMaxV5Player(Player):
         
         search_depth += 1  # 探索深さ
 
-        game_info = {
-            "black_board": game.black_board,
-            "white_board": game.white_board,
-            "action_player_id": game.action_player_id,
-            "is_game_over": game.is_game_over,
-            "turn": game.turn,
-            "black_count": game.black_count,
-            "white_count": game.white_count,
-        }
         actionables_list.reverse()
         for action in actionables_list:
-            self.setting_game(game, game_info)
-            next_player_id, next_actionables, next_is_game_over = game.step(action, action_player_id)
+            tmp_game_info = game_info.copy()
+            next_player_id, next_actionables, next_is_game_over, next_game_info = step(action, action_player_id, tmp_game_info)
             
             self.count += 1
 
             # 引き分けの時は0を返す
             if next_is_game_over:
-                if game.win_player == "2":
+                if next_game_info["win_player"] == "2":
                     return 0
                 else:
                     return float("inf")
             
             # 状態の価値を計算
             if search_depth == 4:
-                value = self._evaluate(game)
+                value = self._evaluate(next_game_info)
             else:
                 if next_player_id == self.player_id:
-                    value = self._max_value(game, None, search_depth, next_actionables, next_player_id)
+                    value = self._max_value(None, search_depth, next_actionables, next_player_id, next_game_info)
                 else:
-                    value = self._min_value(game, max_value, search_depth, next_actionables, next_player_id)
+                    value = self._min_value(max_value, search_depth, next_actionables, next_player_id, next_game_info)
 
             if value > max_value:
                 max_value = value
@@ -239,7 +199,7 @@ class MiniMaxV5Player(Player):
         
         return max_value
 
-    def _evaluate(self, game):
+    def _evaluate(self, game_info):
         """
         葉ノードの評価値を計算(末端ノード)
 
@@ -254,9 +214,12 @@ class MiniMaxV5Player(Player):
           + b2,b7,g2,g7のどれかに自分の石がある場合 * -100
           + b2,b7,g2,g7のどれかに相手の石がある場合 * -100
         """
+        black_board = game_info["black_board"]
+        white_board = game_info["white_board"]
+        turn = game_info["turn"]
+        black_count = game_info["black_count"]
+        white_count = game_info["white_count"]
 
-        black_count = game.black_count
-        white_count = game.white_count
         black_corner_count = 0
         white_corner_count = 0
         black_near_corner_count = 0
@@ -265,12 +228,12 @@ class MiniMaxV5Player(Player):
         white_edge_count = 0
         result = 0
 
-        if game.turn < 56:
+        if turn < 56:
 
             # 角の数を計算
             mask_corner = 0x8100000000000081
-            black_corner_count = bin(game.black_board & mask_corner).count("1")
-            white_corner_count = bin(game.white_board & mask_corner).count("1")
+            black_corner_count = bin(black_board & mask_corner).count("1")
+            white_corner_count = bin(white_board & mask_corner).count("1")
 
             # 角ちか
             mask_near_corner_ur = 0x0203000000000000
@@ -283,25 +246,25 @@ class MiniMaxV5Player(Player):
             mask_corner_dr = 0x0000000000000001
             mask_corner_dl = 0x0000000000000080
 
-            blank_board = ~(game.black_board | game.white_board)
+            blank_board = ~(black_board | white_board)
             # 角が空白の時
             if mask_corner_ur & blank_board != 0:
-                black_near_corner_count += bin(mask_near_corner_ur & game.black_board).count("1")
-                white_near_corner_count += bin(mask_near_corner_ur & game.white_board).count("1")
+                black_near_corner_count += bin(mask_near_corner_ur & black_board).count("1")
+                white_near_corner_count += bin(mask_near_corner_ur & white_board).count("1")
             if mask_corner_ul & blank_board != 0:
-                black_near_corner_count += bin(mask_near_corner_ul & game.black_board).count("1")
-                white_near_corner_count += bin(mask_near_corner_ul & game.white_board).count("1")
+                black_near_corner_count += bin(mask_near_corner_ul & black_board).count("1")
+                white_near_corner_count += bin(mask_near_corner_ul & white_board).count("1")
             if mask_corner_dr & blank_board != 0:
-                black_near_corner_count += bin(mask_near_corner_dr & game.black_board).count("1")
-                white_near_corner_count += bin(mask_near_corner_dr & game.white_board).count("1")
+                black_near_corner_count += bin(mask_near_corner_dr & black_board).count("1")
+                white_near_corner_count += bin(mask_near_corner_dr & white_board).count("1")
             if mask_corner_dl & blank_board != 0:
-                black_near_corner_count += bin(mask_near_corner_dl & game.black_board).count("1")
-                white_near_corner_count += bin(mask_near_corner_dl & game.white_board).count("1")
+                black_near_corner_count += bin(mask_near_corner_dl & black_board).count("1")
+                white_near_corner_count += bin(mask_near_corner_dl & white_board).count("1")
 
             # 端の数を計算
             mask_edge = 0x7e8181818181817e
-            black_edge_count = bin(game.black_board & mask_edge).count("1")
-            white_edge_count = bin(game.white_board & mask_edge).count("1")
+            black_edge_count = bin(black_board & mask_edge).count("1")
+            white_edge_count = bin(white_board & mask_edge).count("1")
 
             # 評価値を計算
             if self.player_id == "1":
@@ -325,7 +288,7 @@ class MiniMaxV5Player(Player):
             else:
                 logger.error("不正なプレイヤーIDです")
         
-        elif game.turn <=60:
+        elif turn <=60:
             if self.player_id == "1":
                 result += (black_count - white_count)*100
             elif self.player_id == "0":
