@@ -4,6 +4,7 @@ import copy
 import logging
 import time
 from game2 import *
+from functools import lru_cache
 
 logging.basicConfig(level=logging.INFO, format='%(message)s')  # ここでログレベルを設定する(debug<info<warning<error)
 logger = logging.getLogger(__name__)
@@ -38,7 +39,11 @@ class MiniMaxV5Player(Player):
         action = self._choice(tmp_game_info)
 
         # ゲーム情報を元に戻す
-        next_player_id, actionables, is_next_game_over, next_game_info = step(action, self.player_id, game_info)
+        next_player_id, actionables, is_next_game_over, next_game_info = step(
+            action, self.player_id,
+            game_info["black_board"], game_info["white_board"], game_info["action_player_id"]
+        )
+        next_game_info["turn"] = game_info["turn"]+1
 
         # debug
         self.count_list.append(self.count)
@@ -81,7 +86,11 @@ class MiniMaxV5Player(Player):
         actionables_list.reverse()
         for action in actionables_list:
             tmp_game_info = game_info.copy()
-            next_player_id, next_actionables, next_is_game_over, next_game_info = step(action, self.player_id, tmp_game_info)
+            next_player_id, next_actionables, next_is_game_over, next_game_info = step(
+                action, self.player_id,
+                tmp_game_info["black_board"], tmp_game_info["white_board"], tmp_game_info["action_player_id"]
+            )
+            next_game_info["turn"] = tmp_game_info["turn"]+1
 
             self.count += 1
 
@@ -122,7 +131,11 @@ class MiniMaxV5Player(Player):
         actionables_list.reverse()
         for action in actionables_list:
             tmp_game_info = game_info.copy()
-            next_player_id, next_actionables, next_is_game_over, next_game_info = step(action, action_player_id, tmp_game_info)
+            next_player_id, next_actionables, next_is_game_over, next_game_info = step(
+                action, action_player_id,
+                tmp_game_info["black_board"], tmp_game_info["white_board"], tmp_game_info["action_player_id"]
+            )
+            next_game_info["turn"] = tmp_game_info["turn"]+1
             
             self.count += 1
 
@@ -135,7 +148,10 @@ class MiniMaxV5Player(Player):
             
             # 状態の価値を計算
             if search_depth == 4:
-                value = self._evaluate(next_game_info)
+                if self.player_id == "1":
+                    value = self._evaluate(next_game_info["black_board"], next_game_info["white_board"], next_game_info["black_count"], next_game_info["white_count"])
+                elif self.player_id == "0":
+                    value = -self._evaluate(next_game_info["black_board"], next_game_info["white_board"], next_game_info["black_count"], next_game_info["white_count"])
             else:
                 if next_player_id == self.player_id:
                     value = self._max_value(min_value, search_depth, next_actionables, next_player_id, next_game_info)
@@ -170,8 +186,12 @@ class MiniMaxV5Player(Player):
         actionables_list.reverse()
         for action in actionables_list:
             tmp_game_info = game_info.copy()
-            next_player_id, next_actionables, next_is_game_over, next_game_info = step(action, action_player_id, tmp_game_info)
-            
+            next_player_id, next_actionables, next_is_game_over, next_game_info = step(
+                action, action_player_id,
+                tmp_game_info["black_board"], tmp_game_info["white_board"], tmp_game_info["action_player_id"]
+            )
+            next_game_info["turn"] = tmp_game_info["turn"]+1
+
             self.count += 1
 
             # 引き分けの時は0を返す
@@ -183,7 +203,11 @@ class MiniMaxV5Player(Player):
             
             # 状態の価値を計算
             if search_depth == 4:
-                value = self._evaluate(next_game_info)
+                if self.player_id == "1":
+                    value = self._evaluate(next_game_info["black_board"], next_game_info["white_board"], next_game_info["black_count"], next_game_info["white_count"])
+                elif self.player_id == "0":
+                    value = -self._evaluate(next_game_info["black_board"], next_game_info["white_board"], next_game_info["black_count"], next_game_info["white_count"])
+                
             else:
                 if next_player_id == self.player_id:
                     value = self._max_value(None, search_depth, next_actionables, next_player_id, next_game_info)
@@ -198,8 +222,9 @@ class MiniMaxV5Player(Player):
                 return max_value
         
         return max_value
-
-    def _evaluate(self, game_info):
+    
+    @lru_cache()
+    def _evaluate(self, black_board, white_board, black_count, white_count):
         """
         葉ノードの評価値を計算(末端ノード)
 
@@ -214,12 +239,6 @@ class MiniMaxV5Player(Player):
           + b2,b7,g2,g7のどれかに自分の石がある場合 * -100
           + b2,b7,g2,g7のどれかに相手の石がある場合 * -100
         """
-        black_board = game_info["black_board"]
-        white_board = game_info["white_board"]
-        turn = game_info["turn"]
-        black_count = game_info["black_count"]
-        white_count = game_info["white_count"]
-
         black_corner_count = 0
         white_corner_count = 0
         black_near_corner_count = 0
@@ -228,71 +247,51 @@ class MiniMaxV5Player(Player):
         white_edge_count = 0
         result = 0
 
-        if turn < 56:
+        # 角の数を計算
+        mask_corner = 0x8100000000000081
+        black_corner_count = bin(black_board & mask_corner).count("1")
+        white_corner_count = bin(white_board & mask_corner).count("1")
 
-            # 角の数を計算
-            mask_corner = 0x8100000000000081
-            black_corner_count = bin(black_board & mask_corner).count("1")
-            white_corner_count = bin(white_board & mask_corner).count("1")
+        # 角ちか
+        mask_near_corner_ur = 0x0203000000000000
+        mask_near_corner_ul = 0x40c0000000000000
+        mask_near_corner_dr = 0x0000000000000302
+        mask_near_corner_dl = 0x000000000000c040
 
-            # 角ちか
-            mask_near_corner_ur = 0x0203000000000000
-            mask_near_corner_ul = 0x40c0000000000000
-            mask_near_corner_dr = 0x0000000000000302
-            mask_near_corner_dl = 0x000000000000c040
+        mask_corner_ur = 0x0100000000000000
+        mask_corner_ul = 0x8000000000000000
+        mask_corner_dr = 0x0000000000000001
+        mask_corner_dl = 0x0000000000000080
 
-            mask_corner_ur = 0x0100000000000000
-            mask_corner_ul = 0x8000000000000000
-            mask_corner_dr = 0x0000000000000001
-            mask_corner_dl = 0x0000000000000080
+        blank_board = ~(black_board | white_board)
+        # 角が空白の時
+        if mask_corner_ur & blank_board != 0:
+            black_near_corner_count += bin(mask_near_corner_ur & black_board).count("1")
+            white_near_corner_count += bin(mask_near_corner_ur & white_board).count("1")
+        if mask_corner_ul & blank_board != 0:
+            black_near_corner_count += bin(mask_near_corner_ul & black_board).count("1")
+            white_near_corner_count += bin(mask_near_corner_ul & white_board).count("1")
+        if mask_corner_dr & blank_board != 0:
+            black_near_corner_count += bin(mask_near_corner_dr & black_board).count("1")
+            white_near_corner_count += bin(mask_near_corner_dr & white_board).count("1")
+        if mask_corner_dl & blank_board != 0:
+            black_near_corner_count += bin(mask_near_corner_dl & black_board).count("1")
+            white_near_corner_count += bin(mask_near_corner_dl & white_board).count("1")
 
-            blank_board = ~(black_board | white_board)
-            # 角が空白の時
-            if mask_corner_ur & blank_board != 0:
-                black_near_corner_count += bin(mask_near_corner_ur & black_board).count("1")
-                white_near_corner_count += bin(mask_near_corner_ur & white_board).count("1")
-            if mask_corner_ul & blank_board != 0:
-                black_near_corner_count += bin(mask_near_corner_ul & black_board).count("1")
-                white_near_corner_count += bin(mask_near_corner_ul & white_board).count("1")
-            if mask_corner_dr & blank_board != 0:
-                black_near_corner_count += bin(mask_near_corner_dr & black_board).count("1")
-                white_near_corner_count += bin(mask_near_corner_dr & white_board).count("1")
-            if mask_corner_dl & blank_board != 0:
-                black_near_corner_count += bin(mask_near_corner_dl & black_board).count("1")
-                white_near_corner_count += bin(mask_near_corner_dl & white_board).count("1")
+        # 端の数を計算
+        mask_edge = 0x7e8181818181817e
+        black_edge_count = bin(black_board & mask_edge).count("1")
+        white_edge_count = bin(white_board & mask_edge).count("1")
 
-            # 端の数を計算
-            mask_edge = 0x7e8181818181817e
-            black_edge_count = bin(black_board & mask_edge).count("1")
-            white_edge_count = bin(white_board & mask_edge).count("1")
-
-            # 評価値を計算
-            if self.player_id == "1":
-                result += black_count * 1
-                result += white_count * -1
-                result += black_corner_count * 100
-                result += white_corner_count * -100
-                result += black_near_corner_count * -100
-                result += white_near_corner_count * 100
-                result += black_edge_count * 10
-                result += white_edge_count * -10
-            elif self.player_id == "0":
-                result += black_count * -1
-                result += white_count * 1
-                result += black_corner_count * -100
-                result += white_corner_count * 100
-                result += white_near_corner_count * -100
-                result += black_near_corner_count * 100
-                result += black_edge_count * -10
-                result += white_edge_count * 10
-            else:
-                logger.error("不正なプレイヤーIDです")
-        
-        elif turn <=60:
-            if self.player_id == "1":
-                result += (black_count - white_count)*100
-            elif self.player_id == "0":
-                result += (white_count - black_count)*100
+        # 評価値を計算
+        result += black_count * 1
+        result += white_count * -1
+        result += black_corner_count * 100
+        result += white_corner_count * -100
+        result += black_near_corner_count * -100
+        result += white_near_corner_count * 100
+        result += black_edge_count * 10
+        result += white_edge_count * -10
 
         return result 
     

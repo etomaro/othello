@@ -1,6 +1,8 @@
 """
 クラスでゲームオブジェクトを持つことを廃止したバージョン
 """
+from functools import lru_cache
+
 
 def get_game_init():
     """
@@ -18,6 +20,7 @@ def get_game_init():
     }
     return game_info
 
+@lru_cache()
 def get_actionables(player_id, black_board, white_board):
     """
     可能なアクションを返却
@@ -112,6 +115,7 @@ def get_actionables(player_id, black_board, white_board):
 
     return legal
 
+@lru_cache()
 def is_actionable(action, player_id, my_player_id, black_board, white_board, is_game_over):
     """
     アクション可能か判定
@@ -131,6 +135,7 @@ def is_actionable(action, player_id, my_player_id, black_board, white_board, is_
 
     return True
 
+@lru_cache()
 def check_game_over(black_count, white_count, black_board, white_board):
     """
     ゲームが終了したかどうかを判定
@@ -166,6 +171,7 @@ def check_game_over(black_count, white_count, black_board, white_board):
     
     return result, win_player
 
+@lru_cache()
 def set_board(action, player_id, black_board, white_board):
     """
     ボードの更新
@@ -277,9 +283,13 @@ def set_board(action, player_id, black_board, white_board):
     
     return black_board, white_board
 
-def step(action, player_id, game_info):
+@lru_cache()
+def step(action, player_id, black_board, white_board, action_player_id):
     """ 
     アクション
+
+    0.01秒早くするためにlru_cacheを使ったため引数にturnが来るはずが消した
+    stepした後にturn+=1をする必要あり
 
     Return:
         next_action_player_id
@@ -287,11 +297,6 @@ def step(action, player_id, game_info):
         is_next_game_over: ゲームが終了したかどうか
         game_info: 次のゲーム情報
     """
-    black_board = game_info["black_board"]
-    white_board = game_info["white_board"]
-    turn = game_info["turn"]
-    action_player_id = game_info["action_player_id"]
-    
 
     # アクションを実行
     next_black_board, next_white_board = set_board(action, player_id, black_board, white_board)
@@ -300,8 +305,6 @@ def step(action, player_id, game_info):
     
     next_black_count = bin(next_black_board).count("1")
     next_white_count = bin(next_white_board).count("1")
-
-    next_turn = turn + 1 
 
     # ゲームが終了かどうか
     is_next_game_over, win_player = check_game_over(
@@ -313,7 +316,7 @@ def step(action, player_id, game_info):
             "white_board": next_white_board,
             "black_count": next_black_count,
             "white_count": next_white_count,
-            "turn": next_turn,
+            "turn": "",
             "action_player_id": "",
             "win_player": win_player,
             "is_game_over": True
@@ -336,7 +339,7 @@ def step(action, player_id, game_info):
         "white_board": next_white_board,
         "black_count": next_black_count,
         "white_count": next_white_count,
-        "turn": next_turn,
+        "turn": "",
         "action_player_id": next_action_player_id,
         "win_player": "",
         "is_game_over": False
