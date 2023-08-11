@@ -25,7 +25,7 @@ app.add_middleware(
 @app.get("/othello/models")
 def start():
     
-    models = ["random", "v1ai", "v2ai"]
+    models = ["random", "v1ai"]
     result = {"model": models}
 
     return result
@@ -82,8 +82,8 @@ def action(info: Info):
             player = RandomPlayer(info["game_info"]["action_player_id"])
         elif info["action_model"] == "v1ai":
             player = MiniMaxV4Player(info["game_info"]["action_player_id"])
-        elif info["action_model"] == "v2ai":
-            player = MiniMaxV5Player(info["game_info"]["action_player_id"])
+        # elif info["action_model"] == "v2ai":
+        #     player = MiniMaxV5Player(info["game_info"]["action_player_id"])
 
         next_player_id, actionables, is_game_over = player.action(game)
     else:
