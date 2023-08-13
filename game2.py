@@ -58,15 +58,50 @@ def get_actionables(player_id, black_board, white_board):
         ld_white = (black_board >> 7) & white_mask_lu_ru_ld_rd
         rd_white = (black_board >> 9) & white_mask_lu_ru_ld_rd
 
-        for i in range(5):
-            l_white |= (l_white << 1) & white_lr_mask  # 上記に当てはまる場所(l_white)かつ1つ左の白かつ列1-6の場所(white_lr_maskに当てはまる箇所)を追加
-            r_white |= (r_white >> 1) & white_lr_mask
-            u_white |= (u_white << 8) & white_ud_mask
-            d_white |= (d_white >> 8) & white_ud_mask
-            lu_white |= (lu_white << 9) & white_mask_lu_ru_ld_rd
-            ru_white |= (ru_white << 7) & white_mask_lu_ru_ld_rd
-            ld_white |= (ld_white >> 7) & white_mask_lu_ru_ld_rd
-            rd_white |= (rd_white >> 9) & white_mask_lu_ru_ld_rd
+        l_white |= (l_white << 1) & white_lr_mask  # 上記に当てはまる場所(l_white)かつ1つ左の白かつ列1-6の場所(white_lr_maskに当てはまる箇所)を追加
+        r_white |= (r_white >> 1) & white_lr_mask
+        u_white |= (u_white << 8) & white_ud_mask
+        d_white |= (d_white >> 8) & white_ud_mask
+        lu_white |= (lu_white << 9) & white_mask_lu_ru_ld_rd
+        ru_white |= (ru_white << 7) & white_mask_lu_ru_ld_rd
+        ld_white |= (ld_white >> 7) & white_mask_lu_ru_ld_rd
+        rd_white |= (rd_white >> 9) & white_mask_lu_ru_ld_rd
+
+        l_white |= (l_white << 1) & white_lr_mask  # 上記に当てはまる場所(l_white)かつ1つ左の白かつ列1-6の場所(white_lr_maskに当てはまる箇所)を追加
+        r_white |= (r_white >> 1) & white_lr_mask
+        u_white |= (u_white << 8) & white_ud_mask
+        d_white |= (d_white >> 8) & white_ud_mask
+        lu_white |= (lu_white << 9) & white_mask_lu_ru_ld_rd
+        ru_white |= (ru_white << 7) & white_mask_lu_ru_ld_rd
+        ld_white |= (ld_white >> 7) & white_mask_lu_ru_ld_rd
+        rd_white |= (rd_white >> 9) & white_mask_lu_ru_ld_rd
+
+        l_white |= (l_white << 1) & white_lr_mask  # 上記に当てはまる場所(l_white)かつ1つ左の白かつ列1-6の場所(white_lr_maskに当てはまる箇所)を追加
+        r_white |= (r_white >> 1) & white_lr_mask
+        u_white |= (u_white << 8) & white_ud_mask
+        d_white |= (d_white >> 8) & white_ud_mask
+        lu_white |= (lu_white << 9) & white_mask_lu_ru_ld_rd
+        ru_white |= (ru_white << 7) & white_mask_lu_ru_ld_rd
+        ld_white |= (ld_white >> 7) & white_mask_lu_ru_ld_rd
+        rd_white |= (rd_white >> 9) & white_mask_lu_ru_ld_rd
+
+        l_white |= (l_white << 1) & white_lr_mask  # 上記に当てはまる場所(l_white)かつ1つ左の白かつ列1-6の場所(white_lr_maskに当てはまる箇所)を追加
+        r_white |= (r_white >> 1) & white_lr_mask
+        u_white |= (u_white << 8) & white_ud_mask
+        d_white |= (d_white >> 8) & white_ud_mask
+        lu_white |= (lu_white << 9) & white_mask_lu_ru_ld_rd
+        ru_white |= (ru_white << 7) & white_mask_lu_ru_ld_rd
+        ld_white |= (ld_white >> 7) & white_mask_lu_ru_ld_rd
+        rd_white |= (rd_white >> 9) & white_mask_lu_ru_ld_rd
+
+        l_white |= (l_white << 1) & white_lr_mask  # 上記に当てはまる場所(l_white)かつ1つ左の白かつ列1-6の場所(white_lr_maskに当てはまる箇所)を追加
+        r_white |= (r_white >> 1) & white_lr_mask
+        u_white |= (u_white << 8) & white_ud_mask
+        d_white |= (d_white >> 8) & white_ud_mask
+        lu_white |= (lu_white << 9) & white_mask_lu_ru_ld_rd
+        ru_white |= (ru_white << 7) & white_mask_lu_ru_ld_rd
+        ld_white |= (ld_white >> 7) & white_mask_lu_ru_ld_rd
+        rd_white |= (rd_white >> 9) & white_mask_lu_ru_ld_rd
 
         legal_left = (l_white << 1) & blank_board
         legal_right = (r_white >> 1) & blank_board
@@ -91,15 +126,50 @@ def get_actionables(player_id, black_board, white_board):
         ld_black = (white_board >> 7) & black_mask_lu_ru_ld_rd
         rd_black = (white_board >> 9) & black_mask_lu_ru_ld_rd
 
-        for i in range(5):
-            l_black |= (l_black << 1) & black_lr_mask  # 上記に当てはまる場所(l_black)かつ1つ左の白かつ列1-6の場所(black_lr_maskに当てはまる箇所)を追加
-            r_black |= (r_black >> 1) & black_lr_mask
-            u_black |= (u_black << 8) & black_ud_mask
-            d_black |= (d_black >> 8) & black_ud_mask
-            lu_black |= (lu_black << 9) & black_mask_lu_ru_ld_rd
-            ru_black |= (ru_black << 7) & black_mask_lu_ru_ld_rd
-            ld_black |= (ld_black >> 7) & black_mask_lu_ru_ld_rd
-            rd_black |= (rd_black >> 9) & black_mask_lu_ru_ld_rd
+        l_black |= (l_black << 1) & black_lr_mask  # 上記に当てはまる場所(l_black)かつ1つ左の白かつ列1-6の場所(black_lr_maskに当てはまる箇所)を追加
+        r_black |= (r_black >> 1) & black_lr_mask
+        u_black |= (u_black << 8) & black_ud_mask
+        d_black |= (d_black >> 8) & black_ud_mask
+        lu_black |= (lu_black << 9) & black_mask_lu_ru_ld_rd
+        ru_black |= (ru_black << 7) & black_mask_lu_ru_ld_rd
+        ld_black |= (ld_black >> 7) & black_mask_lu_ru_ld_rd
+        rd_black |= (rd_black >> 9) & black_mask_lu_ru_ld_rd
+
+        l_black |= (l_black << 1) & black_lr_mask  # 上記に当てはまる場所(l_black)かつ1つ左の白かつ列1-6の場所(black_lr_maskに当てはまる箇所)を追加
+        r_black |= (r_black >> 1) & black_lr_mask
+        u_black |= (u_black << 8) & black_ud_mask
+        d_black |= (d_black >> 8) & black_ud_mask
+        lu_black |= (lu_black << 9) & black_mask_lu_ru_ld_rd
+        ru_black |= (ru_black << 7) & black_mask_lu_ru_ld_rd
+        ld_black |= (ld_black >> 7) & black_mask_lu_ru_ld_rd
+        rd_black |= (rd_black >> 9) & black_mask_lu_ru_ld_rd
+
+        l_black |= (l_black << 1) & black_lr_mask  # 上記に当てはまる場所(l_black)かつ1つ左の白かつ列1-6の場所(black_lr_maskに当てはまる箇所)を追加
+        r_black |= (r_black >> 1) & black_lr_mask
+        u_black |= (u_black << 8) & black_ud_mask
+        d_black |= (d_black >> 8) & black_ud_mask
+        lu_black |= (lu_black << 9) & black_mask_lu_ru_ld_rd
+        ru_black |= (ru_black << 7) & black_mask_lu_ru_ld_rd
+        ld_black |= (ld_black >> 7) & black_mask_lu_ru_ld_rd
+        rd_black |= (rd_black >> 9) & black_mask_lu_ru_ld_rd
+
+        l_black |= (l_black << 1) & black_lr_mask  # 上記に当てはまる場所(l_black)かつ1つ左の白かつ列1-6の場所(black_lr_maskに当てはまる箇所)を追加
+        r_black |= (r_black >> 1) & black_lr_mask
+        u_black |= (u_black << 8) & black_ud_mask
+        d_black |= (d_black >> 8) & black_ud_mask
+        lu_black |= (lu_black << 9) & black_mask_lu_ru_ld_rd
+        ru_black |= (ru_black << 7) & black_mask_lu_ru_ld_rd
+        ld_black |= (ld_black >> 7) & black_mask_lu_ru_ld_rd
+        rd_black |= (rd_black >> 9) & black_mask_lu_ru_ld_rd
+
+        l_black |= (l_black << 1) & black_lr_mask  # 上記に当てはまる場所(l_black)かつ1つ左の白かつ列1-6の場所(black_lr_maskに当てはまる箇所)を追加
+        r_black |= (r_black >> 1) & black_lr_mask
+        u_black |= (u_black << 8) & black_ud_mask
+        d_black |= (d_black >> 8) & black_ud_mask
+        lu_black |= (lu_black << 9) & black_mask_lu_ru_ld_rd
+        ru_black |= (ru_black << 7) & black_mask_lu_ru_ld_rd
+        ld_black |= (ld_black >> 7) & black_mask_lu_ru_ld_rd
+        rd_black |= (rd_black >> 9) & black_mask_lu_ru_ld_rd
 
         legal_left = (l_black << 1) & blank_board
         legal_right = (r_black >> 1) & blank_board

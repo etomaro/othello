@@ -10,17 +10,10 @@ logging.basicConfig(level=logging.INFO, format='%(message)s')  # ここでログ
 logger = logging.getLogger(__name__)
 
 
-class MiniMaxV5Player(Player):
+class MiniMaxV5V2Player(Player):
     """
     ゲームインスタンスクラスを使わない
     """
-    EVALUATE_MASK_NOT25 = 0x42c300000000c342
-    EVALUATE_MASK_1 = 0x0000182424180000
-    EVALUATE_MASK_2 = 0x003c425a5a423c00
-    EVALUATE_MASK_5 = 0x1800248181240018
-    EVALUATE_MASK_10 = 0x2400810000810024
-    EVALUATE_MASK_100 = 0x8100000000000081
-
     def __init__(self, player_id=""):
         # "1": 先行(黒)、"0": 後攻(白)
         if player_id != "":
@@ -59,16 +52,15 @@ class MiniMaxV5Player(Player):
         self.count = 0
 
         return next_player_id, actionables, is_next_game_over, next_game_info
-    
-    @lru_cache()
-    def get_actionables_list(self, actionables):
-        actionables_list = []
-        mask = 0x8000000000000000
-        for i in range(64):
-            if mask & actionables != 0:
-                actionables_list.append(mask)
-            mask = mask >> 1
-        return actionables_list
+
+    def setting_game(self, game, game_info):
+        game.black_board = game_info["black_board"]
+        game.white_board = game_info["white_board"]
+        game.action_player_id = game_info["action_player_id"]
+        game.is_game_over = game_info["is_game_over"]
+        game.turn = game_info["turn"]
+        game.black_count = game_info["black_count"]
+        game.white_count = game_info["white_count"]
     
     def _choice(self, game_info):
         """
@@ -82,7 +74,12 @@ class MiniMaxV5Player(Player):
         max_value = float("-inf")  # マイナス無限
         max_action = None
 
-        actionables_list = self.get_actionables_list(actionables)
+        actionables_list = []
+        mask = 0x8000000000000000
+        for i in range(64):
+            if mask & actionables != 0:
+                actionables_list.append(mask)
+            mask = mask >> 1
 
         search_depth = 1  # 探索深さ
 
@@ -122,7 +119,12 @@ class MiniMaxV5Player(Player):
         
         min_value = float("inf")  # 無限
 
-        actionables_list = self.get_actionables_list(actionables)
+        actionables_list = []
+        mask = 0x8000000000000000
+        for i in range(64):
+            if mask & actionables != 0:
+                actionables_list.append(mask)
+            mask = mask >> 1
         
         search_depth += 1
 
@@ -146,9 +148,10 @@ class MiniMaxV5Player(Player):
             
             # 状態の価値を計算
             if search_depth == 4:
-                value = self._evaluate(next_game_info["black_board"])
-                if self.player_id == "0":
-                    value = -value
+                if self.player_id == "1":
+                    value = self._evaluate(next_game_info["black_board"], next_game_info["white_board"], next_game_info["black_count"], next_game_info["white_count"])
+                elif self.player_id == "0":
+                    value = -self._evaluate(next_game_info["black_board"], next_game_info["white_board"], next_game_info["black_count"], next_game_info["white_count"])
             else:
                 if next_player_id == self.player_id:
                     value = self._max_value(min_value, search_depth, next_actionables, next_player_id, next_game_info)
@@ -171,7 +174,12 @@ class MiniMaxV5Player(Player):
         
         max_value = float("-inf")  # マイナス無限
 
-        actionables_list = self.get_actionables_list(actionables)
+        actionables_list = []
+        mask = 0x8000000000000000
+        for i in range(64):
+            if mask & actionables != 0:
+                actionables_list.append(mask)
+            mask = mask >> 1
         
         search_depth += 1  # 探索深さ
 
@@ -195,9 +203,10 @@ class MiniMaxV5Player(Player):
             
             # 状態の価値を計算
             if search_depth == 4:
-                value = self._evaluate(next_game_info["black_board"])
-                if self.player_id == "0":
-                    value = -value
+                if self.player_id == "1":
+                    value = self._evaluate(next_game_info["black_board"], next_game_info["white_board"], next_game_info["black_count"], next_game_info["white_count"])
+                elif self.player_id == "0":
+                    value = -self._evaluate(next_game_info["black_board"], next_game_info["white_board"], next_game_info["black_count"], next_game_info["white_count"])
                 
             else:
                 if next_player_id == self.player_id:
@@ -215,7 +224,7 @@ class MiniMaxV5Player(Player):
         return max_value
     
     @lru_cache()
-    def _evaluate(self, my_board):
+    def _evaluate(self, black_board, white_board, black_count, white_count):
         """
         葉ノードの評価値を計算(末端ノード)
 
@@ -230,20 +239,61 @@ class MiniMaxV5Player(Player):
           + b2,b7,g2,g7のどれかに自分の石がある場合 * -100
           + b2,b7,g2,g7のどれかに相手の石がある場合 * -100
         """
+        black_corner_count = 0
+        white_corner_count = 0
+        black_near_corner_count = 0
+        white_near_corner_count = 0
+        black_edge_count = 0
+        white_edge_count = 0
         result = 0
-        result += bin(self.EVALUATE_MASK_NOT25 & my_board).count("1") * -25
 
-        result += bin(self.EVALUATE_MASK_1 & my_board).count("1") * 1
+        # 角の数を計算
+        mask_corner = 0x8100000000000081
+        black_corner_count = bin(black_board & mask_corner).count("1")
+        white_corner_count = bin(white_board & mask_corner).count("1")
 
-        result += bin(self.EVALUATE_MASK_2 & my_board).count("1") * 2
+        # 角ちか
+        mask_near_corner_ur = 0x0203000000000000
+        mask_near_corner_ul = 0x40c0000000000000
+        mask_near_corner_dr = 0x0000000000000302
+        mask_near_corner_dl = 0x000000000000c040
 
-        result += bin(self.EVALUATE_MASK_5 & my_board).count("1") * 5
+        mask_corner_ur = 0x0100000000000000
+        mask_corner_ul = 0x8000000000000000
+        mask_corner_dr = 0x0000000000000001
+        mask_corner_dl = 0x0000000000000080
 
-        result += bin(self.EVALUATE_MASK_10 & my_board).count("1") * 10
+        blank_board = ~(black_board | white_board)
+        # 角が空白の時
+        if mask_corner_ur & blank_board != 0:
+            black_near_corner_count += bin(mask_near_corner_ur & black_board).count("1")
+            white_near_corner_count += bin(mask_near_corner_ur & white_board).count("1")
+        if mask_corner_ul & blank_board != 0:
+            black_near_corner_count += bin(mask_near_corner_ul & black_board).count("1")
+            white_near_corner_count += bin(mask_near_corner_ul & white_board).count("1")
+        if mask_corner_dr & blank_board != 0:
+            black_near_corner_count += bin(mask_near_corner_dr & black_board).count("1")
+            white_near_corner_count += bin(mask_near_corner_dr & white_board).count("1")
+        if mask_corner_dl & blank_board != 0:
+            black_near_corner_count += bin(mask_near_corner_dl & black_board).count("1")
+            white_near_corner_count += bin(mask_near_corner_dl & white_board).count("1")
 
-        result += bin(self.EVALUATE_MASK_100 & my_board).count("1") * 100
+        # 端の数を計算
+        mask_edge = 0x7e8181818181817e
+        black_edge_count = bin(black_board & mask_edge).count("1")
+        white_edge_count = bin(white_board & mask_edge).count("1")
 
-        return result
+        # 評価値を計算
+        result += black_count * 1
+        result += white_count * -1
+        result += black_corner_count * 100
+        result += white_corner_count * -100
+        result += black_near_corner_count * -100
+        result += white_near_corner_count * 100
+        result += black_edge_count * 10
+        result += white_edge_count * -10
+
+        return result 
     
     
 
