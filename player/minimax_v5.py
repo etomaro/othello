@@ -47,7 +47,7 @@ class MiniMaxV5Player(Player):
 
         # ゲーム情報を元に戻す
         next_player_id, actionables, is_next_game_over, next_game_info = step(
-            action, self.player_id,
+            action,
             game_info["black_board"], game_info["white_board"], game_info["action_player_id"]
         )
         next_game_info["turn"] = game_info["turn"]+1
@@ -90,7 +90,7 @@ class MiniMaxV5Player(Player):
         for action in actionables_list:
             tmp_game_info = game_info.copy()
             next_player_id, next_actionables, next_is_game_over, next_game_info = step(
-                action, self.player_id,
+                action,
                 tmp_game_info["black_board"], tmp_game_info["white_board"], tmp_game_info["action_player_id"]
             )
             next_game_info["turn"] = tmp_game_info["turn"]+1
@@ -102,9 +102,9 @@ class MiniMaxV5Player(Player):
                 return action
             
             if next_player_id == self.player_id:
-                value = self._max_value(None, search_depth, next_actionables, next_player_id, next_game_info)
+                value = self._max_value(None, search_depth, next_actionables, next_game_info)
             else:
-                value = self._min_value(max_value, search_depth, next_actionables, next_player_id, next_game_info)
+                value = self._min_value(max_value, search_depth, next_actionables, next_game_info)
 
             if value >= max_value:
                 max_value = value
@@ -115,7 +115,7 @@ class MiniMaxV5Player(Player):
         
         return max_action
 
-    def _min_value(self, alfa, search_depth, actionables, action_player_id, game_info):
+    def _min_value(self, alfa, search_depth, actionables, game_info):
         """
         最小値を返す
         """
@@ -130,7 +130,7 @@ class MiniMaxV5Player(Player):
         for action in actionables_list:
             tmp_game_info = game_info.copy()
             next_player_id, next_actionables, next_is_game_over, next_game_info = step(
-                action, action_player_id,
+                action,
                 tmp_game_info["black_board"], tmp_game_info["white_board"], tmp_game_info["action_player_id"]
             )
             next_game_info["turn"] = tmp_game_info["turn"]+1
@@ -151,9 +151,9 @@ class MiniMaxV5Player(Player):
                     value = -value
             else:
                 if next_player_id == self.player_id:
-                    value = self._max_value(min_value, search_depth, next_actionables, next_player_id, next_game_info)
+                    value = self._max_value(min_value, search_depth, next_actionables, next_game_info)
                 else:
-                    value = self._min_value(None, search_depth, next_actionables, next_player_id, next_game_info)
+                    value = self._min_value(None, search_depth, next_actionables, next_game_info)
 
             if value < min_value:
                 min_value = value
@@ -164,7 +164,7 @@ class MiniMaxV5Player(Player):
         
         return min_value
 
-    def _max_value(self, beta, search_depth, actionables, action_player_id, game_info):
+    def _max_value(self, beta, search_depth, actionables, game_info):
         """
         最大値を返す
         """
@@ -179,7 +179,7 @@ class MiniMaxV5Player(Player):
         for action in actionables_list:
             tmp_game_info = game_info.copy()
             next_player_id, next_actionables, next_is_game_over, next_game_info = step(
-                action, action_player_id,
+                action,
                 tmp_game_info["black_board"], tmp_game_info["white_board"], tmp_game_info["action_player_id"]
             )
             next_game_info["turn"] = tmp_game_info["turn"]+1
@@ -201,9 +201,9 @@ class MiniMaxV5Player(Player):
                 
             else:
                 if next_player_id == self.player_id:
-                    value = self._max_value(None, search_depth, next_actionables, next_player_id, next_game_info)
+                    value = self._max_value(None, search_depth, next_actionables, next_game_info)
                 else:
-                    value = self._min_value(max_value, search_depth, next_actionables, next_player_id, next_game_info)
+                    value = self._min_value(max_value, search_depth, next_actionables, next_game_info)
 
             if value > max_value:
                 max_value = value

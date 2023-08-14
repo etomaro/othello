@@ -354,7 +354,7 @@ def set_board(action, player_id, black_board, white_board):
     return black_board, white_board
 
 @lru_cache()
-def step(action, player_id, black_board, white_board, action_player_id):
+def step(action, black_board, white_board, action_player_id):
     """ 
     アクション
 
@@ -369,7 +369,7 @@ def step(action, player_id, black_board, white_board, action_player_id):
     """
 
     # アクションを実行
-    next_black_board, next_white_board = set_board(action, player_id, black_board, white_board)
+    next_black_board, next_white_board = set_board(action, action_player_id, black_board, white_board)
 
     # 石の数を更新
     
@@ -416,3 +416,12 @@ def step(action, player_id, black_board, white_board, action_player_id):
     }
 
     return next_action_player_id, actionables, False, next_game_info
+
+def get_actionables_list(actionables):
+    actionables_list = []
+    mask = 0x8000000000000000
+    for i in range(64):
+        if mask & actionables != 0:
+            actionables_list.append(mask)
+        mask = mask >> 1
+    return actionables_list
