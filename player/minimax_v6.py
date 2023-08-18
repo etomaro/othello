@@ -3,7 +3,8 @@ import random
 import copy
 import logging
 import time
-
+from game2 import *
+from functools import lru_cache
 
 logging.basicConfig(level=logging.INFO, format='%(message)s')  # ここでログレベルを設定する(debug<info<warning<error)
 logger = logging.getLogger(__name__)
@@ -11,15 +12,15 @@ logger = logging.getLogger(__name__)
 
 class MiniMaxV6Player(Player):
     """
-    MINIMAXを導入
-      mini_value()の時にαカットを検討
-      max2_value()の時にβカットを検討
-      mini2_value()の時にαカットを検討
-      max3_value()の時にβカットを検討
-      mini3_value()の時にαカットを検討
-    6手先まで行動(自分と相手が一回ずつ行動)した後の状態で価値を決めて、min(),max()で最適な手を選択する
-    評価関数をUpdate
+    ゲームインスタンスクラスを使わない
     """
+    EVALUATE_MASK_NOT25 = 0x42c300000000c342
+    EVALUATE_MASK_1 = 0x0000182424180000
+    EVALUATE_MASK_2 = 0x003c425a5a423c00
+    EVALUATE_MASK_5 = 0x1800248181240018
+    EVALUATE_MASK_10 = 0x2400810000810024
+    EVALUATE_MASK_100 = 0x8100000000000081
+
     def __init__(self, player_id=""):
         # "1": 先行(黒)、"0": 後攻(白)
         if player_id != "":
@@ -31,18 +32,25 @@ class MiniMaxV6Player(Player):
         self.time_list = []
         self.total_count = 0  # 1戦ごとの探索数
 
-    def action(self, game):
+    def action(self, game_info):
         """
         アクションをする
         """
-        # actionables = game.get_actionables(self.player_id)
-        # if len(actionables) == 0:
-        #     raise Exception("アクションできません")
         start_time = time.time()
 
-        tmp_game = copy.deepcopy(game)
-        action = self._choice(tmp_game)
-        next_player_id, actionables, is_game_over = game.step(action, self.player_id)
+        # actionables = game.get_actionables(self.player_id)
+        # if actionables == 0:
+        #     raise Exception("アクションできません")
+        tmp_game_info = game_info.copy()
+
+        action = self._choice(tmp_game_info)
+
+        # ゲーム情報を元に戻す
+        next_player_id, actionables, is_next_game_over, next_game_info = step(
+            action,
+            game_info["black_board"], game_info["white_board"], game_info["action_player_id"]
+        )
+        next_game_info["turn"] = game_info["turn"]+1
 
         # debug
         self.count_list.append(self.count)
@@ -50,13 +58,23 @@ class MiniMaxV6Player(Player):
         self.total_count += self.count
         self.count = 0
 
-        return next_player_id, actionables, is_game_over
+        return next_player_id, actionables, is_next_game_over, next_game_info
     
-    def _choice(self, game):
+    @lru_cache()
+    def get_actionables_list(self, actionables):
+        actionables_list = []
+        mask = 0x8000000000000000
+        for i in range(64):
+            if mask & actionables != 0:
+                actionables_list.append(mask)
+            mask = mask >> 1
+        return actionables_list
+    
+    def _choice(self, game_info):
         """
         最適な手を選択する
         """
-        actionables = game.get_actionables(self.player_id)
+        actionables = get_actionables(self.player_id, game_info["black_board"], game_info["white_board"])
         if actionables == 0:
             raise Exception("アクションできません")
         
@@ -64,253 +82,169 @@ class MiniMaxV6Player(Player):
         max_value = float("-inf")  # マイナス無限
         max_action = None
 
-        actionables_list = []
-        mask = 0x8000000000000000
-        for i in range(64):
-            if mask & actionables != 0:
-                actionables_list.append(mask)
-            mask = mask >> 1
+        actionables_list = self.get_actionables_list(actionables)
 
+        search_depth = 1  # 探索深さ
+
+        actionables_list.reverse()
         for action in actionables_list:
-            next_game = copy.deepcopy(game)  # インスタンスの値コピー
-            next_player_id, next_actionables, next_is_game_over = next_game.step(action, self.player_id)
+            tmp_game_info = game_info.copy()
+            next_player_id, next_actionables, next_is_game_over, next_game_info = step(
+                action,
+                tmp_game_info["black_board"], tmp_game_info["white_board"], tmp_game_info["action_player_id"]
+            )
+            next_game_info["turn"] = tmp_game_info["turn"]+1
+
+            self.count += 1
 
             # ゲームが終了した場合
             if next_is_game_over:
                 return action
             
-            value = self._min_value(next_game, max_value)
+            if next_player_id == self.player_id:
+                value = self._max_value(None, search_depth, next_actionables, next_game_info)
+            else:
+                value = self._min_value(max_value, search_depth, next_actionables, next_game_info)
 
             if value >= max_value:
                 max_value = value
                 max_action = action
+            
+            # if self.count > 500:
+            #     return max_action
         
         return max_action
 
-    def _min_value(self, game, alfa):
+    def _min_value(self, alfa, search_depth, actionables, game_info):
         """
         最小値を返す
         """
         
         min_value = float("inf")  # 無限
-        opponent_player_id = "1" if self.player_id == "0" else "0"
-        actionables = game.get_actionables(opponent_player_id)
 
-        actionables_list = []
-        mask = 0x8000000000000000
-        for i in range(64):
-            if mask & actionables != 0:
-                actionables_list.append(mask)
-            mask = mask >> 1
+        actionables_list = self.get_actionables_list(actionables)
+        
+        search_depth += 1
 
+        actionables_list.reverse()
         for action in actionables_list:
-            new_game = copy.deepcopy(game)  # インスタンスの値コピー
-            next_player_id, next_actionables, next_is_game_over = new_game.step(action, opponent_player_id)
+            tmp_game_info = game_info.copy()
+            next_player_id, next_actionables, next_is_game_over, next_game_info = step(
+                action,
+                tmp_game_info["black_board"], tmp_game_info["white_board"], tmp_game_info["action_player_id"]
+            )
+            next_game_info["turn"] = tmp_game_info["turn"]+1
             
+            self.count += 1
+
             if next_is_game_over:
-                return float("-inf")
+                # 引き分けの時は0を返す
+                if next_game_info["win_player"] == "2":
+                    return 0
+                else:
+                    return float("-inf")
             
             # 状態の価値を計算
-            value = self._max2_value(new_game, min_value)
+            if search_depth == 4:
+                value = self._evaluate(next_game_info["black_board"])
+                if self.player_id == "0":
+                    value = -value
+            else:
+                if next_player_id == self.player_id:
+                    value = self._max_value(min_value, search_depth, next_actionables, next_game_info)
+                else:
+                    value = self._min_value(None, search_depth, next_actionables, next_game_info)
 
-            # αカット
-            if value < alfa:
-                return value
-
-            if value <= min_value:
+            if value < min_value:
                 min_value = value
+            
+            # αカット
+            if alfa is not None and min_value < alfa:
+                return min_value
         
         return min_value
 
-    def _max2_value(self, game, beta):
+    def _max_value(self, beta, search_depth, actionables, game_info):
         """
         最大値を返す
         """
         
         max_value = float("-inf")  # マイナス無限
-        actionables = game.get_actionables(self.player_id)
 
-        actionables_list = []
-        mask = 0x8000000000000000
-        for i in range(64):
-            if mask & actionables != 0:
-                actionables_list.append(mask)
-            mask = mask >> 1
-    
+        actionables_list = self.get_actionables_list(actionables)
+        
+        search_depth += 1  # 探索深さ
+
+        actionables_list.reverse()
         for action in actionables_list:
-            new_game = copy.deepcopy(game)  # インスタンスの値コピー
-            next_player_id, next_actionables, next_is_game_over = new_game.step(action, self.player_id)
-            
+            tmp_game_info = game_info.copy()
+            next_player_id, next_actionables, next_is_game_over, next_game_info = step(
+                action,
+                tmp_game_info["black_board"], tmp_game_info["white_board"], tmp_game_info["action_player_id"]
+            )
+            next_game_info["turn"] = tmp_game_info["turn"]+1
+
+            self.count += 1
+
+            # 引き分けの時は0を返す
             if next_is_game_over:
-                return float("inf")
+                if next_game_info["win_player"] == "2":
+                    return 0
+                else:
+                    return float("inf")
             
             # 状態の価値を計算
-            value = self._min2_value(new_game, max_value)
+            if search_depth == 4:
+                value = self._evaluate(next_game_info["black_board"])
+                if self.player_id == "0":
+                    value = -value
+                
+            else:
+                if next_player_id == self.player_id:
+                    value = self._max_value(None, search_depth, next_actionables, next_game_info)
+                else:
+                    value = self._min_value(max_value, search_depth, next_actionables, next_game_info)
 
-            # βカット
-            if value > beta:
-                return value
-
-            if value >= max_value:
+            if value > max_value:
                 max_value = value
+            
+            # βカット
+            if beta is not None and max_value > beta:
+                return max_value
         
         return max_value
     
-    def _min2_value(self, game, alfa):
-        """
-        最小値を返す
-        """
-        
-        min_value = float("inf")  # 無限
-        opponent_player_id = "1" if self.player_id == "0" else "0"
-        actionables = game.get_actionables(opponent_player_id)
-
-        actionables_list = []
-        mask = 0x8000000000000000
-        for i in range(64):
-            if mask & actionables != 0:
-                actionables_list.append(mask)
-            mask = mask >> 1
-
-        for action in actionables_list:
-            new_game = copy.deepcopy(game)  # インスタンスの値コピー
-            next_player_id, next_actionables, next_is_game_over = new_game.step(action, opponent_player_id)
-            
-            if next_is_game_over:
-                return float("-inf")
-            
-            # 状態の価値を計算
-            value = self._max3_value(new_game, min_value)
-
-            # αカット
-            if value < alfa:
-                return value
-
-            if value <= min_value:
-                min_value = value
-
-        return min_value
-    
-    def _max3_value(self, game, beta):
-        """
-        最大値を返す
-        """
-        
-        max_value = float("-inf")  # マイナス無限
-        actionables = game.get_actionables(self.player_id)
-
-        actionables_list = []
-        mask = 0x8000000000000000
-        for i in range(64):
-            if mask & actionables != 0:
-                actionables_list.append(mask)
-            mask = mask >> 1
-
-        for action in actionables_list:
-            new_game = copy.deepcopy(game)  # インスタンスの値コピー
-            next_player_id, next_actionables, next_is_game_over = new_game.step(action, self.player_id)
-            
-            if next_is_game_over:
-                return float("inf")
-            
-            # 状態の価値を計算
-            value = self._min3_value(new_game, max_value)
-
-            # βカット
-            if value > beta:
-                return value
-
-            if value >= max_value:
-                max_value = value
-        
-        return max_value
-
-    def _min3_value(self, game, alfa):
-        """
-        最小値を返す
-        """
-        
-        min_value = float("inf")  # 無限
-        opponent_player_id = "1" if self.player_id == "0" else "0"
-        actionables = game.get_actionables(opponent_player_id)
-
-        actionables_list = []
-        mask = 0x8000000000000000
-        for i in range(64):
-            if mask & actionables != 0:
-                actionables_list.append(mask)
-            mask = mask >> 1
-    
-        for action in actionables_list:
-            new_game = copy.deepcopy(game)  # インスタンスの値コピー
-            next_player_id, next_actionables, next_is_game_over = new_game.step(action, opponent_player_id)
-            
-            if next_is_game_over:
-                return float("-inf")
-            
-            # 状態の価値を計算
-            value = self._evaluate(new_game)
-
-            # αカット
-            if value < alfa:
-                return value
-
-            if value <= min_value:
-                min_value = value
-
-        return min_value
-
-    def _evaluate(self, game):
+    @lru_cache()
+    def _evaluate(self, my_board):
         """
         葉ノードの評価値を計算(末端ノード)
 
         ゲームが終了した場合+10000 or -10000を返す
         評価方法
-          + 自分の角の数 * 10000
-          + 相手の角の数 * -10000
-          + 自分の端の数 * 100
-          + 相手の端の数 * -100
+          + 自分の角の数 * 100
+          + 相手の角の数 * -100
+          + 自分の端の数 * 10
+          + 相手の端の数 * -10
           + 自分の石の数 * 1
           + 相手の石の数 * -1
+          + b2,b7,g2,g7のどれかに自分の石がある場合 * -100
+          + b2,b7,g2,g7のどれかに相手の石がある場合 * -100
         """
-
-        black_count = game.black_count
-        white_count = game.white_count
-        black_corner_count = 0
-        white_corner_count = 0
-        black_edge_count = 0
-        white_edge_count = 0
         result = 0
+        result += bin(self.EVALUATE_MASK_NOT25 & my_board).count("1") * -25
 
-        # 角の数を計算
-        mask_corner = 0x8100000000000081
-        black_corner_count = bin(game.black_board & mask_corner).count("1")
-        white_corner_count = bin(game.white_board & mask_corner).count("1")
-        
-        # 端の数を計算
-        mask_edge = 0x7e8181818181817e
-        black_edge_count = bin(game.black_board & mask_edge).count("1")
-        white_edge_count = bin(game.white_board & mask_edge).count("1")
+        result += bin(self.EVALUATE_MASK_1 & my_board).count("1") * 1
 
-        # 評価値を計算
-        if self.player_id == "1":
-            result += black_count * 1
-            result += white_count * -1
-            result += black_corner_count * 100
-            result += white_corner_count * -100
-            result += black_edge_count * 10
-            result += white_edge_count * -10
-        elif self.player_id == "0":
-            result += black_count * -1
-            result += white_count * 1
-            result += black_corner_count * -100
-            result += white_corner_count * 100
-            result += black_edge_count * -10
-            result += white_edge_count * 10
-        else:
-            logger.error("不正なプレイヤーIDです")
-        
-        return result 
+        result += bin(self.EVALUATE_MASK_2 & my_board).count("1") * 2
+
+        result += bin(self.EVALUATE_MASK_5 & my_board).count("1") * 5
+
+        result += bin(self.EVALUATE_MASK_10 & my_board).count("1") * 10
+
+        result += bin(self.EVALUATE_MASK_100 & my_board).count("1") * 100
+
+        return result
+    
     
 
 

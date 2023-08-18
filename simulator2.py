@@ -61,8 +61,8 @@ class Simulator():
             game_info = next_game_info
 
 # ---1回test---
-first_player = MiniMaxV5Player()
-second_player = MiniMaxV5Player()
+first_player = MiniMaxV6Player()
+second_player = MiniMaxV6Player()
 simulator = Simulator(first_player, second_player)
 start = time.time()
 game_result = simulator.run()
