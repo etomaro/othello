@@ -148,33 +148,44 @@ class MiniMaxV6V3Player(Player):
           + b2,b7,g2,g7のどれかに自分の石がある場合 * -100
           + b2,b7,g2,g7のどれかに相手の石がある場合 * -100
         """
-        if action_player_id == 1:
-            my_board = black_board
-            opponent_board = white_board
-        else:
-            my_board = white_board
-            opponent_board = black_board
-
+        black_count = bin(black_board).count("1")
+        white_count = bin(white_board).count("1")
+        black_corner_count = 0
+        white_corner_count = 0
+        black_edge_count = 0
+        white_edge_count = 0
         result = 0
-        result += bin(self.EVALUATE_MASK_NOT25 & my_board).count("1") * -25
-        result += bin(self.EVALUATE_MASK_NOT25 & opponent_board).count("1") * 25
 
-        result += bin(self.EVALUATE_MASK_1 & my_board).count("1") * 1
-        result += bin(self.EVALUATE_MASK_1 & opponent_board).count("1") * -1
+        # 角の数を計算
+        mask_corner = 0x8100000000000081
+        black_corner_count = bin(black_board & mask_corner).count("1")
+        white_corner_count = bin(white_board & mask_corner).count("1")
+        
+        # 端の数を計算
+        mask_edge = 0x7e8181818181817e
+        black_edge_count = bin(black_board & mask_edge).count("1")
+        white_edge_count = bin(white_board & mask_edge).count("1")
 
-        result += bin(self.EVALUATE_MASK_2 & my_board).count("1") * 2
-        result += bin(self.EVALUATE_MASK_2 & opponent_board).count("1") * -2
-
-        result += bin(self.EVALUATE_MASK_5 & my_board).count("1") * 5
-        result += bin(self.EVALUATE_MASK_5 & opponent_board).count("1") * -5
-
-        result += bin(self.EVALUATE_MASK_10 & my_board).count("1") * 10
-        result += bin(self.EVALUATE_MASK_10 & opponent_board).count("1") * -10
-
-        result += bin(self.EVALUATE_MASK_100 & my_board).count("1") * 100
-        result += bin(self.EVALUATE_MASK_100 & opponent_board).count("1") * -100
-
-        return result
+        # 評価値を計算
+        if action_player_id == 1:
+            result += black_count * 1
+            result += white_count * -1
+            result += black_corner_count * 100
+            result += white_corner_count * -100
+            result += black_edge_count * 10
+            result += white_edge_count * -10
+        elif action_player_id == 0:
+            result += black_count * -1
+            result += white_count * 1
+            result += black_corner_count * -100
+            result += white_corner_count * 100
+            result += black_edge_count * -10
+            result += white_edge_count * 10
+        else:
+            logger.error("不正なプレイヤーIDです")
+        
+        return result 
+    
     
     
 
