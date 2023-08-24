@@ -4,6 +4,7 @@ import logging
 from player.minimax_v6 import MiniMaxV6Player
 from player.minimax_v6v2 import MiniMaxV6V2Player
 from player.minimax_v6v3 import MiniMaxV6V3Player
+from player.minimax_v6v4 import MiniMaxV6V4Player
 
 
 logging.basicConfig(level=logging.INFO, format='%(message)s')  # ここでログレベルを設定する(debug<info<warning<error)
@@ -39,6 +40,12 @@ class Simulator():
             # logger.info(f"---{self.game.turn}回目---\n{result}\n")
 
             black_board, white_board = action_player.action(black_board, white_board, actionables)
+            # print("ブランクボード")
+            # blank_board = ~(black_board | white_board)
+            # print(blank_board)
+            # print(bin(blank_board & 0xffffffffffffffff).count("1"))
+            # # print(bin(blank_board & 0xffffffffffffffff))  
+            # print()            
             
             # debug
             # print_board(black_board, white_board)
@@ -61,8 +68,8 @@ class Simulator():
                 action_player = self.player0
 
 # ---1回test---
-first_player = MiniMaxV6V3Player()
-second_player = MiniMaxV6V2Player()
+first_player = MiniMaxV6V4Player()
+second_player = MiniMaxV6V3Player()
 simulator = Simulator(first_player, second_player)
 start = time.time()
 black_count, white_count, win_player = simulator.run()
