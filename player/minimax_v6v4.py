@@ -80,7 +80,6 @@ class MiniMaxV6V4Player(Player):
 
         search_depth = 0  # 探索深さ
 
-        actionables_list.reverse()
         for action in actionables_list:
             next_black_board, next_white_board = set_board(action, self.player_id, black_board, white_board)
 
