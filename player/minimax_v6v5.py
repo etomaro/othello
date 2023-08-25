@@ -6,15 +6,18 @@ import time
 from game3 import *
 from functools import lru_cache
 import concurrent.futures
+import psutil
 
 logging.basicConfig(level=logging.INFO, format='%(message)s')  # ここでログレベルを設定する(debug<info<warning<error)
 logger = logging.getLogger(__name__)
 
-
-class MiniMaxV6V4Player(Player):
+def func(i):
+    return i * 2
+class MiniMaxV6V5Player(Player):
     """
     ゲームクラス3を使用
     negamax(depth4)
+    並列化
     """
     EVALUATE_MASK_NOT25 = 0x42c300000000c342
     EVALUATE_MASK_1 = 0x0000182424180000
@@ -94,21 +97,36 @@ class MiniMaxV6V4Player(Player):
         #         break
         #     if (action & self.mask_near_corner) != 0:
         #         actionables_list.remove(action)
+        with concurrent.futures.ProcessPoolExecutor() as executor:
+            results = executor.map(self.process_func, actionables_list, [self.player_id]*len(actionables_list), [black_board]*len(actionables_list), [white_board]*len(actionables_list))
 
-
-        for action in actionables_list:
-            next_black_board, next_white_board = set_board(action, self.player_id, black_board, white_board)
-
-            self.count += 1
-            next_action_player_id = 1 - self.player_id
-            
-            value = - self.nega_ab(next_action_player_id, next_black_board, next_white_board, search_depth+1, False, -beta, -alpha)
-
-            if value > alpha:
-                alpha = value
-                max_action = action
+            for result in results:
+                value, action = result
+                if value > alpha:
+                    alpha = value
+                    max_action = action
         
         return max_action
+    
+    def process_func(self, action, player_id, black_board, white_board):
+        next_black_board, next_white_board = set_board(action, player_id, black_board, white_board)
+
+        self.count += 1
+        next_action_player_id = 1 - player_id
+        
+        value = - self.nega_ab(next_action_player_id, next_black_board, next_white_board, 1, False, float("-inf"), float("inf"))
+
+        return value, action
+    
+    def process_func2(self, action, player_id, black_board, white_board, depth, is_pass, alpha, beta):
+        next_black_board, next_white_board = set_board(action, player_id, black_board, white_board)
+
+        self.count += 1
+        next_action_player_id = 1 - player_id
+        
+        value = - self.nega_ab(next_action_player_id, next_black_board, next_white_board, depth+1, is_pass, -beta, -alpha)
+
+        return value
 
     def nega_ab(self, action_player_id, black_board, white_board, depth, is_pass, alpha, beta):
         """
@@ -128,20 +146,14 @@ class MiniMaxV6V4Player(Player):
         #     if (action & self.mask_near_corner) != 0:
         #         actionables_list.remove(action)
 
-        for action in actionables_list:
-            next_black_board, next_white_board = set_board(action, action_player_id, black_board, white_board)
-
-            self.count += 1
-            next_action_player_id = 1 - action_player_id
-
-            value = -self.nega_ab(next_action_player_id, next_black_board, next_white_board, depth+1, False, -beta, -alpha)
-
-            # betaカット
-            if value >= beta:
-                return value
+        
+        with concurrent.futures.ProcessPoolExecutor() as executor:
+            results = executor.map(self.process_func2, actionables_list, [self.player_id]*len(actionables_list), [black_board]*len(actionables_list), [white_board]*len(actionables_list), [depth]*len(actionables_list), [False]*len(actionables_list), [-beta]*len(actionables_list), [-alpha]*len(actionables_list))
             
-            alpha = max(alpha, value)
-            max_value = max(max_value, value)
+            for value in results:
+                
+                alpha = max(alpha, value)
+                max_value = max(max_value, value)
         
         # パスの場合(max_valueが-infのまま)
         if max_value == float("-inf"):

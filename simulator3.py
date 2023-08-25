@@ -5,6 +5,7 @@ from player.minimax_v6 import MiniMaxV6Player
 from player.minimax_v6v2 import MiniMaxV6V2Player
 from player.minimax_v6v3 import MiniMaxV6V3Player
 from player.minimax_v6v4 import MiniMaxV6V4Player
+from player.minimax_v6v5 import MiniMaxV6V5Player
 
 
 logging.basicConfig(level=logging.INFO, format='%(message)s')  # ここでログレベルを設定する(debug<info<warning<error)
@@ -68,20 +69,21 @@ class Simulator():
                 action_player = self.player0
 
 # ---1回test---
-first_player = MiniMaxV6V4Player()
-second_player = MiniMaxV6V3Player()
-simulator = Simulator(first_player, second_player)
-start = time.time()
-black_count, white_count, win_player = simulator.run()
-logger.info("v6 vs v6")
-logger.info(f"勝者: {win_player}")
-logger.info(f"先行の石の数: {black_count}")
-logger.info(f"後攻の石の数: {white_count}")
-logger.info(f"処理時間: {time.time() - start}")
-logger.info("1アクションの探索数: %s", first_player.count_list)
-logger.info("1アクションの探索平均数: %s", sum(first_player.count_list) / len(first_player.count_list))
-logger.info("1アクションの探索の最大値: %s", max(first_player.count_list))
-logger.info("1アクションの時間: %s", first_player.time_list)
-logger.info("1アクションの時間平均: %s", sum(first_player.time_list) / len(first_player.time_list))
-logger.info("1アクションの時間の最大値: %s", max(first_player.time_list))
-logger.info("1戦の探索数: %s", first_player.total_count)
+if __name__ == "__main__":
+    first_player = MiniMaxV6V5Player()
+    second_player = MiniMaxV6V3Player()
+    simulator = Simulator(first_player, second_player)
+    start = time.time()
+    black_count, white_count, win_player = simulator.run()
+    logger.info("v6 vs v6")
+    logger.info(f"勝者: {win_player}")
+    logger.info(f"先行の石の数: {black_count}")
+    logger.info(f"後攻の石の数: {white_count}")
+    logger.info(f"処理時間: {time.time() - start}")
+    logger.info("1アクションの探索数: %s", first_player.count_list)
+    logger.info("1アクションの探索平均数: %s", sum(first_player.count_list) / len(first_player.count_list))
+    logger.info("1アクションの探索の最大値: %s", max(first_player.count_list))
+    logger.info("1アクションの時間: %s", first_player.time_list)
+    logger.info("1アクションの時間平均: %s", sum(first_player.time_list) / len(first_player.time_list))
+    logger.info("1アクションの時間の最大値: %s", max(first_player.time_list))
+    logger.info("1戦の探索数: %s", first_player.total_count)
