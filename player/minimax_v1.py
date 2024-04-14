@@ -8,6 +8,7 @@ import time
 logging.basicConfig(level=logging.INFO, format='%(message)s')  # ここでログレベルを設定する(debug<info<warning<error)
 logger = logging.getLogger(__name__)
 
+
 class MiniMaxV1Player(Player):
     """
     2手先まで行動(自分と相手が一回ずつ行動)した後の状態で価値を決めて、min(),max()で最適な手を選択する
@@ -16,7 +17,7 @@ class MiniMaxV1Player(Player):
         # "1": 先行(黒)、"0": 後攻(白)
         if player_id != "":
             self.player_id = player_id
-        
+
         # 探索数ノード調査
         self.count = 0  # 1アクションごとの探索数
         self.count_list = []
@@ -130,8 +131,5 @@ class MiniMaxV1Player(Player):
             result = black_count - white_count
         else:
             result = white_count - black_count
-        
+
         return result 
-    
-
-

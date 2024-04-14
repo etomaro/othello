@@ -5,12 +5,10 @@ import time
 from functools import lru_cache
 
 
-
 def get_game_init():
     """
     ゲームの初期化
     """
-
     black_board = 0x0000000810000000
     white_board = 0x0000001008000000
     actionables = 0x0000102004080000
@@ -41,7 +39,7 @@ def get_actionables(player_id, black_board, white_board):
     blank_board = ~(black_board | white_board)
 
 
-    if player_id == 1:
+    if player_id == 1:  # 黒
         # 1. 左方向に対してい置ける場所を取得
         white_lr_mask = white_board & mask_lr  # 列1-6かつ白の場所
         white_ud_mask = white_board & mask_ud
@@ -204,7 +202,7 @@ def set_board(action, player_id, black_board, white_board):
         mask_right_up = mask_lu_ru_ld_rd & white_board
         mask_left_down = mask_lu_ru_ld_rd & white_board
         mask_right_down = mask_lu_ru_ld_rd & white_board
-
+        
         l_rev = (action << 1) & mask_left
         r_rev = (action >> 1) & mask_right
         u_rev = (action << 8) & mask_up

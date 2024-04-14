@@ -6,6 +6,7 @@ from player.minimax_v6v2 import MiniMaxV6V2Player
 from player.minimax_v6v3 import MiniMaxV6V3Player
 from player.minimax_v6v4 import MiniMaxV6V4Player
 from player.minimax_v6v5 import MiniMaxV6V5Player
+from player.minimax_v6v6 import MiniMaxV6V6Player
 
 
 logging.basicConfig(level=logging.INFO, format='%(message)s')  # ここでログレベルを設定する(debug<info<warning<error)
@@ -70,8 +71,8 @@ class Simulator():
 
 # ---1回test---
 if __name__ == "__main__":
-    first_player = MiniMaxV6V5Player()
-    second_player = MiniMaxV6V3Player()
+    first_player = MiniMaxV6V6Player()
+    second_player = MiniMaxV6V6Player()
     simulator = Simulator(first_player, second_player)
     start = time.time()
     black_count, white_count, win_player = simulator.run()

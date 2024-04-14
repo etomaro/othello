@@ -109,11 +109,11 @@ inline int move_line_half(const int p, const int o, const int place, const int k
 void board_init() {
     int idx, b, w, place, i, j, k, l_place, inc_idx;
 
-    // pow3(3のi乗)の初期化
+    // pow3(3のi乗)の初期化(3^0から3^10まで)
     pow3[0] = 1;
     for (idx = 1; idx < 11; ++idx)
         pow3[idx] = pow3[idx- 1] * 3;
-
+    // そのインデックスの左からi番目の値(3進数なので0か1か2)の初期化
     for (i = 0; i < n_line; ++i){
         for (j = 0; j < hw; ++j)
             pop_digit[i][j] = (i / pow3[hw - 1 - j]) % 3;
